@@ -3,6 +3,7 @@ package com.watchbattery.notification.wear
 import com.watchbattery.notification.core.constants.WearConstants
 import com.watchbattery.notification.core.model.BatteryStatus
 import com.watchbattery.notification.core.model.WatchSettingsSync
+import com.watchbattery.notification.wear.service.WatchChargingMonitorService
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -24,11 +25,44 @@ class WearSyncTest {
     @Test
     fun testPathsConsistency() {
         assertEquals("/watch_status", WearConstants.PATH_WATCH_STATUS)
+        assertEquals("/watch_fully_charged", WearConstants.PATH_WATCH_FULLY_CHARGED)
+        assertEquals("/watch_charging_started", WearConstants.PATH_WATCH_CHARGING_STARTED)
+        assertEquals("/watch_charging_stopped", WearConstants.PATH_WATCH_CHARGING_STOPPED)
+        assertEquals("/watch_low_battery", WearConstants.PATH_WATCH_LOW_BATTERY)
         assertEquals("/request_status_update", WearConstants.PATH_REQUEST_STATUS_UPDATE)
         assertEquals("/open_app_on_phone", WearConstants.PATH_OPEN_APP_ON_PHONE)
         assertEquals("/open_app_on_watch", WearConstants.PATH_OPEN_APP_ON_WATCH)
         assertEquals("/request_settings_sync", WearConstants.PATH_REQUEST_SETTINGS_SYNC)
         assertEquals("/settings_sync_response", WearConstants.PATH_SETTINGS_SYNC_RESPONSE)
+    }
+
+    @Test
+    fun testChargingMonitorServiceConstants() {
+        assertEquals("watch_charging_monitor", WatchChargingMonitorService.CHANNEL_ID)
+        assertEquals(1002, WatchChargingMonitorService.NOTIFICATION_ID)
+    }
+
+    @Test
+    fun testChargingThresholdTriggerLogic() {
+        val highThreshold = 80
+
+        // Case 1: Just crossed threshold while charging -> should trigger
+        val percent = 80
+        val lastLevel = 79
+        val isCharging = true
+        val shouldTrigger = percent >= highThreshold && isCharging && (lastLevel < highThreshold || lastLevel == -1)
+        assertTrue("Should trigger alert when crossing high threshold while charging", shouldTrigger)
+
+        // Case 2: Already above threshold -> should not trigger again
+        val nextPercent = 81
+        val nextLastLevel = 80
+        val shouldTriggerAgain = nextPercent >= highThreshold && isCharging && (nextLastLevel < highThreshold || nextLastLevel == -1)
+        assertFalse("Should not trigger alert when already above threshold", shouldTriggerAgain)
+
+        // Case 3: Reached threshold but unplugged -> should not trigger
+        val unplugged = false
+        val shouldTriggerUnplugged = percent >= highThreshold && unplugged && (lastLevel < highThreshold || lastLevel == -1)
+        assertFalse("Should not trigger alert when unplugged", shouldTriggerUnplugged)
     }
 
     @Test

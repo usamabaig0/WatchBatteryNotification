@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
+import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.CoroutineScope
@@ -18,12 +19,10 @@ import com.watchbattery.notification.core.constants.WearConstants
 import com.watchbattery.notification.core.model.BatteryStatus
 import com.watchbattery.notification.wear.BuildConfig
 import com.watchbattery.notification.wear.WearBatteryApp
+import com.watchbattery.notification.wear.service.WatchChargingMonitorService
 import java.nio.ByteBuffer
 
 class WatchBatteryReceiver : BroadcastReceiver() {
-
-    private val scope = CoroutineScope(Dispatchers.IO)
-    private val json = Json { ignoreUnknownKeys = true }
 
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return
@@ -33,12 +32,21 @@ class WatchBatteryReceiver : BroadcastReceiver() {
                 handleBatteryChanged(context, intent)
             }
             Intent.ACTION_POWER_CONNECTED -> {
+                ContextCompat.startForegroundService(context, Intent(context, WatchChargingMonitorService::class.java))
                 sendPowerEvent(context, WearConstants.PATH_WATCH_CHARGING_STARTED)
             }
             Intent.ACTION_POWER_DISCONNECTED -> {
+                context.stopService(Intent(context, WatchChargingMonitorService::class.java))
                 sendPowerEvent(context, WearConstants.PATH_WATCH_CHARGING_STOPPED)
             }
             Intent.ACTION_BOOT_COMPLETED -> {
+                val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val status = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                        status == BatteryManager.BATTERY_STATUS_FULL
+                if (isCharging) {
+                    ContextCompat.startForegroundService(context, Intent(context, WatchChargingMonitorService::class.java))
+                }
                 queryAndSendCurrentStatus(context)
             }
         }
@@ -85,47 +93,6 @@ class WatchBatteryReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun dispatchStatus(context: Context, percent: Int, isCharging: Boolean) {
-        scope.launch {
-            try {
-                val model = Build.MODEL ?: "Smartwatch"
-                val timestamp = System.currentTimeMillis()
-
-                // 1. Put into DataClient (Persistent DataLayer sync across reconnection and reboots)
-                val dataMapRequest = PutDataMapRequest.create(WearConstants.PATH_WATCH_STATUS).apply {
-                    dataMap.putInt(WearConstants.EXTRA_BATTERY_LEVEL, percent)
-                    dataMap.putBoolean(WearConstants.EXTRA_CHARGING_STATUS, isCharging)
-                    dataMap.putString(WearConstants.EXTRA_WATCH_MODEL, model)
-                    dataMap.putLong(WearConstants.EXTRA_TIMESTAMP, timestamp)
-                    dataMap.putInt("watch_app_version_code", BuildConfig.VERSION_CODE)
-                }
-                val putDataReq = dataMapRequest.asPutDataRequest().setUrgent()
-                Wearable.getDataClient(context).putDataItem(putDataReq).await()
-
-                // 2. Also send via MessageClient to connected nodes for instantaneous UI reactivity
-                val nodeClient = Wearable.getNodeClient(context)
-                val nodes = nodeClient.connectedNodes.await()
-                if (nodes.isNotEmpty()) {
-                    val telemetry = BatteryStatus(
-                        battery_level = percent,
-                        is_charging = isCharging,
-                        time = timestamp,
-                        watch_model = model,
-                        watch_app_version_code = BuildConfig.VERSION_CODE
-                    )
-                    val bytes = json.encodeToString(telemetry).toByteArray(Charsets.UTF_8)
-                    val messageClient = Wearable.getMessageClient(context)
-
-                    for (node in nodes) {
-                        messageClient.sendMessage(node.id, WearConstants.PATH_WATCH_STATUS, bytes).await()
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
     private fun sendPowerEvent(context: Context, path: String) {
         val prefs = context.getSharedPreferences("wear_battery_prefs", Context.MODE_PRIVATE)
         val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -156,6 +123,50 @@ class WatchBatteryReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        private val scope = CoroutineScope(Dispatchers.IO)
+        private val json = Json { ignoreUnknownKeys = true }
+
+        fun dispatchStatus(context: Context, percent: Int, isCharging: Boolean) {
+            scope.launch {
+                try {
+                    val model = Build.MODEL ?: "Smartwatch"
+                    val timestamp = System.currentTimeMillis()
+
+                    // 1. Put into DataClient (Persistent DataLayer sync across reconnection and reboots)
+                    val dataMapRequest = PutDataMapRequest.create(WearConstants.PATH_WATCH_STATUS).apply {
+                        dataMap.putInt(WearConstants.EXTRA_BATTERY_LEVEL, percent)
+                        dataMap.putBoolean(WearConstants.EXTRA_CHARGING_STATUS, isCharging)
+                        dataMap.putString(WearConstants.EXTRA_WATCH_MODEL, model)
+                        dataMap.putLong(WearConstants.EXTRA_TIMESTAMP, timestamp)
+                        dataMap.putInt("watch_app_version_code", BuildConfig.VERSION_CODE)
+                    }
+                    val putDataReq = dataMapRequest.asPutDataRequest().setUrgent()
+                    Wearable.getDataClient(context).putDataItem(putDataReq).await()
+
+                    // 2. Also send via MessageClient to connected nodes for instantaneous UI reactivity
+                    val nodeClient = Wearable.getNodeClient(context)
+                    val nodes = nodeClient.connectedNodes.await()
+                    if (nodes.isNotEmpty()) {
+                        val telemetry = BatteryStatus(
+                            battery_level = percent,
+                            is_charging = isCharging,
+                            time = timestamp,
+                            watch_model = model,
+                            watch_app_version_code = BuildConfig.VERSION_CODE
+                        )
+                        val bytes = json.encodeToString(telemetry).toByteArray(Charsets.UTF_8)
+                        val messageClient = Wearable.getMessageClient(context)
+
+                        for (node in nodes) {
+                            messageClient.sendMessage(node.id, WearConstants.PATH_WATCH_STATUS, bytes).await()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
         fun queryAndSendCurrentStatus(context: Context) {
             forceSendCurrentStatus(context)
         }
@@ -186,8 +197,7 @@ class WatchBatteryReceiver : BroadcastReceiver() {
                 .putLong("last_reading_time", System.currentTimeMillis())
                 .apply()
 
-            val receiver = WatchBatteryReceiver()
-            receiver.dispatchStatus(context, percent, isCharging)
+            dispatchStatus(context, percent, isCharging)
         }
     }
 }

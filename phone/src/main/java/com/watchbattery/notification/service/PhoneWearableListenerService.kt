@@ -5,7 +5,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.*
@@ -22,7 +24,9 @@ import com.watchbattery.notification.core.model.BatteryStatus
 import com.watchbattery.notification.core.model.ConnectionStatus
 import com.watchbattery.notification.core.model.WatchSettingsSync
 import com.watchbattery.notification.core.physics.ChargePredictivePhysics
+import com.watchbattery.notification.receiver.NotificationActionReceiver
 import com.watchbattery.notification.ui.MainActivity
+import com.watchbattery.notification.ui.QuickAlarmActivity
 import java.nio.ByteBuffer
 
 class PhoneWearableListenerService : WearableListenerService() {
@@ -204,12 +208,105 @@ class PhoneWearableListenerService : WearableListenerService() {
     }
 
     private fun triggerAlert(eventType: String, level: Int) {
-        val intent = Intent(this, NotificationPlayerService::class.java).apply {
+        val watchModel = WatchBatteryApp.instance.repository.settingsFlow.value.watchModel.ifBlank { "Smartwatch" }
+
+        // 1. Acquire a 10-second PARTIAL_WAKE_LOCK via PowerManager
+        runCatching {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WatchBattery:PhoneAlertWakeLock")
+            wakeLock.acquire(10000L)
+        }
+
+        // 2. Immediately build and post a high-priority lock-screen notification directly via NotificationManager
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val title = when (eventType) {
+            WearConstants.EVENT_FULLY_CHARGED -> "Smartwatch Fully Charged! ($level%)"
+            WearConstants.EVENT_LOW_BATTERY -> "Watch Battery Alert"
+            WearConstants.EVENT_CHARGING_STARTED -> "Watch Charging Started ($level%)"
+            WearConstants.EVENT_CHARGING_STOPPED -> "Watch Unplugged ($level%)"
+            else -> "Watch Battery Alert"
+        }
+        val contentText = "$watchModel is currently at $level%"
+
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            this,
+            1001,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Action 1: Snooze (5 min)
+        val snoozeIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+            action = WearConstants.ACTION_SNOOZE
             putExtra(WearConstants.EXTRA_EVENT_TYPE, eventType)
             putExtra(WearConstants.EXTRA_BATTERY_LEVEL, level)
-            putExtra(WearConstants.EXTRA_WATCH_MODEL, WatchBatteryApp.instance.repository.settingsFlow.value.watchModel)
+            putExtra(WearConstants.EXTRA_WATCH_MODEL, watchModel)
         }
-        ContextCompat.startForegroundService(this, intent)
+        val snoozePendingIntent = PendingIntent.getBroadcast(
+            this,
+            1,
+            snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Action 2: Stop
+        val stopIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+            action = WearConstants.ACTION_STOP_REPEAT
+        }
+        val stopPendingIntent = PendingIntent.getBroadcast(
+            this,
+            2,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Action 3: Set reminder
+        val reminderIntent = Intent(this, QuickAlarmActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val reminderPendingIntent = PendingIntent.getActivity(
+            this,
+            3,
+            reminderIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+        val notification = NotificationCompat.Builder(this, WearConstants.CHANNEL_ID_ALARM)
+            .setContentTitle(title)
+            .setContentText(contentText)
+            .setSmallIcon(com.watchbattery.notification.R.drawable.ic_stat_watch_battery)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setSound(soundUri)
+            .setVibrate(longArrayOf(0, 500, 250, 500))
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setContentIntent(fullScreenPendingIntent)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
+            .addAction(0, "Snooze 5 min", snoozePendingIntent)
+            .addAction(0, "Stop", stopPendingIntent)
+            .addAction(0, "Set reminder", reminderPendingIntent)
+            .build()
+
+        notificationManager.notify(1001, notification)
+
+        // 3. Start NotificationPlayerService wrapped in runCatching to play custom TTS/audio
+        runCatching {
+            val playerIntent = Intent(this, NotificationPlayerService::class.java).apply {
+                putExtra(WearConstants.EXTRA_EVENT_TYPE, eventType)
+                putExtra(WearConstants.EXTRA_BATTERY_LEVEL, level)
+                putExtra(WearConstants.EXTRA_WATCH_MODEL, watchModel)
+            }
+            ContextCompat.startForegroundService(this, playerIntent)
+        }.onFailure { it.printStackTrace() }
     }
 
     private fun respondToSettingsSync(nodeId: String) {

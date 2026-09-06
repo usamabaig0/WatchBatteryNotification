@@ -26,6 +26,24 @@ class SyncProtocolTest {
     }
 
     @Test
+    fun testAlertEventConstants() {
+        assertEquals("FULLY_CHARGED", WearConstants.EVENT_FULLY_CHARGED)
+        assertEquals("LOW_BATTERY", WearConstants.EVENT_LOW_BATTERY)
+        assertEquals("CHARGING_STARTED", WearConstants.EVENT_CHARGING_STARTED)
+        assertEquals("CHARGING_STOPPED", WearConstants.EVENT_CHARGING_STOPPED)
+        assertEquals("SmartAlarmChannel_v2", WearConstants.CHANNEL_ID_ALARM)
+        assertEquals("NotificationPlayerChannel_v8", WearConstants.CHANNEL_ID_PLAYER)
+        assertEquals("ChargingMonitorChannel_v3", WearConstants.CHANNEL_ID_CHARGING_MONITOR)
+    }
+
+    @Test
+    fun testAlertActionConstants() {
+        assertEquals("com.watchbattery.notification.ACTION_SNOOZE", WearConstants.ACTION_SNOOZE)
+        assertEquals("com.watchbattery.notification.ACTION_STOP_REPEAT", WearConstants.ACTION_STOP_REPEAT)
+        assertEquals("com.watchbattery.notification.ACTION_TRIGGER_SMART_ALARM", WearConstants.ACTION_TRIGGER_SMART_ALARM)
+    }
+
+    @Test
     fun testSettingsSyncSerialization() {
         val sync = WatchSettingsSync(
             lowBatteryThreshold = 20,
