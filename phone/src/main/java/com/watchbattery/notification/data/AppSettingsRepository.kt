@@ -64,11 +64,11 @@ class AppSettingsRepository(private val context: Context) {
         val KEY_VIBRATION_ENABLED = booleanPreferencesKey("vibrationEnabled")
         val KEY_VIBRATION_PATTERN = stringPreferencesKey("vibrationPattern")
 
-        // Repeat
+        // Repeat (Seconds)
         val KEY_LOW_REPEAT_CONFIG = stringPreferencesKey("lowBatteryRepeatConfig")
-        val KEY_LOW_REPEAT_INTERVAL = intPreferencesKey("lowBatteryRepeatInterval")
+        val KEY_LOW_REPEAT_INTERVAL_SEC = intPreferencesKey("lowBatteryRepeatIntervalSeconds")
         val KEY_HIGH_REPEAT_CONFIG = stringPreferencesKey("highBatteryRepeatConfig")
-        val KEY_HIGH_REPEAT_INTERVAL = intPreferencesKey("highBatteryRepeatInterval")
+        val KEY_HIGH_REPEAT_INTERVAL_SEC = intPreferencesKey("highBatteryRepeatIntervalSeconds")
         val KEY_SMART_ALARM_TIMESTAMP = longPreferencesKey("smartAlarmTimestamp")
 
         // Charging Notification Bar
@@ -79,7 +79,7 @@ class AppSettingsRepository(private val context: Context) {
         val KEY_THEME = stringPreferencesKey("colorTheme")
         val KEY_ACCENT = stringPreferencesKey("accentColor")
 
-        // Telemetry Cache
+        // Telemetry Cache (Unset until watch connects)
         val KEY_BATTERY_LEVEL = intPreferencesKey("watchBatteryLevel")
         val KEY_CHARGING_STATUS = booleanPreferencesKey("watchChargingStatus")
         val KEY_WATCH_MODEL = stringPreferencesKey("watchModel")
@@ -132,9 +132,9 @@ class AppSettingsRepository(private val context: Context) {
                 vibrationPattern = prefs[KEY_VIBRATION_PATTERN]?.let { runCatching { VibrationPattern.valueOf(it) }.getOrNull() } ?: VibrationPattern.STANDARD,
 
                 lowBatteryRepeatConfig = prefs[KEY_LOW_REPEAT_CONFIG]?.let { runCatching { RepeatConfig.valueOf(it) }.getOrNull() } ?: RepeatConfig.DO_NOT_REPEAT,
-                lowBatteryRepeatInterval = prefs[KEY_LOW_REPEAT_INTERVAL] ?: 5,
+                lowBatteryRepeatIntervalSeconds = prefs[KEY_LOW_REPEAT_INTERVAL_SEC] ?: 300,
                 highBatteryRepeatConfig = prefs[KEY_HIGH_REPEAT_CONFIG]?.let { runCatching { RepeatConfig.valueOf(it) }.getOrNull() } ?: RepeatConfig.DO_NOT_REPEAT,
-                highBatteryRepeatInterval = prefs[KEY_HIGH_REPEAT_INTERVAL] ?: 5,
+                highBatteryRepeatIntervalSeconds = prefs[KEY_HIGH_REPEAT_INTERVAL_SEC] ?: 300,
                 smartAlarmTimestamp = prefs[KEY_SMART_ALARM_TIMESTAMP] ?: 0L,
 
                 chargingNotificationEnabled = prefs[KEY_CHARGING_BAR_ENABLED] ?: true,
@@ -143,11 +143,11 @@ class AppSettingsRepository(private val context: Context) {
                 colorTheme = prefs[KEY_THEME]?.let { runCatching { ColorTheme.valueOf(it) }.getOrNull() } ?: ColorTheme.SYSTEM,
                 accentColor = prefs[KEY_ACCENT]?.let { runCatching { AccentColor.valueOf(it) }.getOrNull() } ?: AccentColor.PROFESSIONAL_BLUE,
 
-                watchBatteryLevel = prefs[KEY_BATTERY_LEVEL] ?: 82,
+                watchBatteryLevel = prefs[KEY_BATTERY_LEVEL] ?: -1,
                 watchChargingStatus = prefs[KEY_CHARGING_STATUS] ?: false,
-                watchModel = prefs[KEY_WATCH_MODEL] ?: "Galaxy Watch 6",
-                lastSyncTimestamp = prefs[KEY_LAST_SYNC] ?: System.currentTimeMillis(),
-                watchAppVersionCode = prefs[KEY_VERSION_CODE] ?: 256,
+                watchModel = prefs[KEY_WATCH_MODEL] ?: "",
+                lastSyncTimestamp = prefs[KEY_LAST_SYNC] ?: 0L,
+                watchAppVersionCode = prefs[KEY_VERSION_CODE] ?: 0,
                 isWatchUpdateAvailable = prefs[KEY_UPDATE_AVAILABLE] ?: false,
                 trialStartTime = prefs[KEY_TRIAL_START] ?: System.currentTimeMillis(),
                 isPremiumUnlocked = prefs[KEY_PREMIUM] ?: true
@@ -175,7 +175,7 @@ class AppSettingsRepository(private val context: Context) {
             }
         }
 
-    private val _connectionStatusFlow = MutableStateFlow(ConnectionStatus.CONNECTED)
+    private val _connectionStatusFlow = MutableStateFlow(ConnectionStatus.DISCONNECTED)
     val connectionStatusFlow: StateFlow<ConnectionStatus> = _connectionStatusFlow.asStateFlow()
 
     fun setConnectionStatus(status: ConnectionStatus) {
@@ -221,9 +221,9 @@ class AppSettingsRepository(private val context: Context) {
             prefs[KEY_VIBRATION_PATTERN] = updated.vibrationPattern.name
 
             prefs[KEY_LOW_REPEAT_CONFIG] = updated.lowBatteryRepeatConfig.name
-            prefs[KEY_LOW_REPEAT_INTERVAL] = updated.lowBatteryRepeatInterval
+            prefs[KEY_LOW_REPEAT_INTERVAL_SEC] = updated.lowBatteryRepeatIntervalSeconds
             prefs[KEY_HIGH_REPEAT_CONFIG] = updated.highBatteryRepeatConfig.name
-            prefs[KEY_HIGH_REPEAT_INTERVAL] = updated.highBatteryRepeatInterval
+            prefs[KEY_HIGH_REPEAT_INTERVAL_SEC] = updated.highBatteryRepeatIntervalSeconds
             prefs[KEY_SMART_ALARM_TIMESTAMP] = updated.smartAlarmTimestamp
 
             prefs[KEY_CHARGING_BAR_ENABLED] = updated.chargingNotificationEnabled
@@ -232,9 +232,13 @@ class AppSettingsRepository(private val context: Context) {
             prefs[KEY_THEME] = updated.colorTheme.name
             prefs[KEY_ACCENT] = updated.accentColor.name
 
-            prefs[KEY_BATTERY_LEVEL] = updated.watchBatteryLevel
+            if (updated.watchBatteryLevel >= 0) {
+                prefs[KEY_BATTERY_LEVEL] = updated.watchBatteryLevel
+            }
             prefs[KEY_CHARGING_STATUS] = updated.watchChargingStatus
-            prefs[KEY_WATCH_MODEL] = updated.watchModel
+            if (updated.watchModel.isNotBlank()) {
+                prefs[KEY_WATCH_MODEL] = updated.watchModel
+            }
             prefs[KEY_LAST_SYNC] = updated.lastSyncTimestamp
             prefs[KEY_VERSION_CODE] = updated.watchAppVersionCode
             prefs[KEY_UPDATE_AVAILABLE] = updated.isWatchUpdateAvailable
@@ -249,6 +253,7 @@ class AppSettingsRepository(private val context: Context) {
             prefs[KEY_WATCH_MODEL] = model
             prefs[KEY_LAST_SYNC] = System.currentTimeMillis()
         }
+        setConnectionStatus(ConnectionStatus.CONNECTED)
         recordBatterySample(batteryLevel, isCharging)
     }
 
@@ -259,7 +264,7 @@ class AppSettingsRepository(private val context: Context) {
             } ?: emptyList()
 
             val newSample = BatterySample(System.currentTimeMillis(), batteryLevel, isCharging)
-            val updated = (existing + newSample).takeLast(200) // retain last 200 points for charts
+            val updated = (existing + newSample).takeLast(200)
             prefs[KEY_BATTERY_HISTORY] = json.encodeToString(updated)
         }
     }

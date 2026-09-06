@@ -29,10 +29,7 @@ import com.watchbattery.notification.WatchBatteryApp
 import com.watchbattery.notification.core.constants.WearConstants
 import com.watchbattery.notification.core.physics.PredictiveModelData
 import com.watchbattery.notification.ui.screens.*
-import com.watchbattery.notification.ui.theme.DarkBackground
-import com.watchbattery.notification.ui.theme.DarkSurfaceElevated
-import com.watchbattery.notification.ui.theme.WatchBatteryTheme
-import com.watchbattery.notification.ui.theme.getAccentColor
+import com.watchbattery.notification.ui.theme.*
 
 class MainActivity : ComponentActivity() {
 
@@ -55,12 +52,11 @@ class MainActivity : ComponentActivity() {
             val predictiveModel by repository.predictiveModelFlow.collectAsStateWithLifecycle(initialValue = PredictiveModelData())
             val batteryHistory by repository.batteryHistoryFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
-            val activeAccent = getAccentColor(settings.accentColor, isDark = true)
-
             WatchBatteryTheme(
                 colorTheme = settings.colorTheme,
                 accentColor = settings.accentColor
             ) {
+                val themeColors = WearBatteryTheme.colors
                 if (!settings.welcomeScreenShown) {
                     OnboardingScreen(
                         onFinished = {
@@ -68,7 +64,7 @@ class MainActivity : ComponentActivity() {
                                 repository.updateSettings { it.copy(welcomeScreenShown = true) }
                             }
                         },
-                        accentColor = activeAccent
+                        accentColor = themeColors.accent
                     )
                 } else {
                     MainAppScaffold(
@@ -87,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onOpenOnWatch = { sendRemoteWatchCommand(WearConstants.PATH_OPEN_APP_ON_WATCH) },
                         onRefreshConnection = { sendRemoteWatchCommand(WearConstants.PATH_REQUEST_STATUS_UPDATE) },
-                        accentColor = activeAccent
+                        accentColor = themeColors.accent
                     )
                 }
             }
@@ -149,11 +145,12 @@ fun MainAppScaffold(
     accentColor: Color
 ) {
     var selectedItem by remember { mutableStateOf(NavigationItem.DASHBOARD) }
+    val colors = WearBatteryTheme.colors
 
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = DarkSurfaceElevated,
+                containerColor = colors.surfaceElevated,
                 tonalElevation = 0.dp
             ) {
                 NavigationItem.values().forEach { item ->
@@ -165,16 +162,16 @@ fun MainAppScaffold(
                         onClick = { selectedItem = item },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Color.White,
-                            selectedTextColor = accentColor,
-                            indicatorColor = accentColor,
-                            unselectedIconColor = Color(0xFFA7AFB8),
-                            unselectedTextColor = Color(0xFFA7AFB8)
+                            selectedTextColor = colors.accent,
+                            indicatorColor = colors.accent,
+                            unselectedIconColor = colors.textSecondary,
+                            unselectedTextColor = colors.textSecondary
                         )
                     )
                 }
             }
         },
-        containerColor = DarkBackground
+        containerColor = colors.background
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedItem) {

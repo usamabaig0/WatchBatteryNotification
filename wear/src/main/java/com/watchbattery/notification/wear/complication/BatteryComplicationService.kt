@@ -8,12 +8,17 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 class BatteryComplicationService : ComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
-        return createComplicationData(82, type)
+        val bm = getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
+        val sysLevel = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        val level = if (sysLevel in 0..100) sysLevel else 100
+        return createComplicationData(level, type)
     }
 
     override fun onComplicationRequest(request: ComplicationRequest, listener: ComplicationRequestListener) {
         val prefs = getSharedPreferences("wear_battery_prefs", Context.MODE_PRIVATE)
-        val level = prefs.getInt("last_battery_level", 82)
+        val bm = getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
+        val sysLevel = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        val level = if (sysLevel in 0..100) sysLevel else prefs.getInt("last_battery_level", 100)
         val data = createComplicationData(level, request.complicationType)
         listener.onComplicationData(data)
     }

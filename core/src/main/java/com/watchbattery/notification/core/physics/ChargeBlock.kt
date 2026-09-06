@@ -11,7 +11,7 @@ import kotlin.math.min
 enum class ChargeBlock(
     val startPercent: Int,
     val endPercent: Int,
-    val defaultMinutesPerBlock: Double // Default typical charging duration for a 5% step
+    val defaultMinutesPerBlock: Double
 ) {
     B_0_5(0, 5, 2.5),
     B_5_10(5, 10, 2.5),
@@ -52,14 +52,17 @@ data class BatterySample(
 @Serializable
 data class PredictiveModelData(
     val learnedBlockMinutes: Map<String, Double> = emptyMap(),
-    val averageChargeVelocityPercentPerMin: Double = 1.82,
-    val averageDischargePercentPerHour: Double = 3.2,
-    val totalSessionsAnalyzed: Int = 38,
-    val confidenceScore: Double = 0.92,
+    val averageChargeVelocityPercentPerMin: Double = 0.0,
+    val averageDischargePercentPerHour: Double = 0.0,
+    val totalSessionsAnalyzed: Int = 0,
+    val confidenceScore: Double = 0.0,
     val anomalyBudgetRemaining: Int = 5,
-    val daytimeDischargePerHour: Double = 3.8,
-    val nightDischargePerHour: Double = 1.4
-)
+    val daytimeDischargePerHour: Double = 0.0,
+    val nightDischargePerHour: Double = 0.0
+) {
+    val hasRecordedData: Boolean
+        get() = totalSessionsAnalyzed > 0
+}
 
 object ChargePredictivePhysics {
 
@@ -67,14 +70,13 @@ object ChargePredictivePhysics {
 
     /**
      * Calculates estimated minutes remaining until target percentage is reached.
-     * Integrates through the 20 piecewise ChargeBlocks with CC-CV curve.
      */
     fun calculateMinutesToTarget(
         currentLevel: Int,
         targetLevel: Int,
         model: PredictiveModelData
     ): Int {
-        if (currentLevel >= targetLevel) return 0
+        if (currentLevel < 0 || currentLevel >= targetLevel) return 0
         var totalMinutes = 0.0
 
         for (block in ChargeBlock.values()) {
@@ -96,20 +98,21 @@ object ChargePredictivePhysics {
 
     /**
      * Calculates estimated hours and minutes until battery drops to 0%.
-     * Factors time of day (day active vs night sleep clusters).
      */
     fun calculateDischargeTimeRemaining(
         currentLevel: Int,
         isNightTime: Boolean,
         model: PredictiveModelData
     ): Pair<Int, Int> {
-        val ratePerHour = if (isNightTime) {
-            model.nightDischargePerHour.coerceAtLeast(0.5)
-        } else {
-            model.daytimeDischargePerHour.coerceAtLeast(1.0)
+        if (currentLevel <= 0) return Pair(0, 0)
+        val ratePerHour = when {
+            isNightTime && model.nightDischargePerHour > 0 -> model.nightDischargePerHour
+            !isNightTime && model.daytimeDischargePerHour > 0 -> model.daytimeDischargePerHour
+            isNightTime -> 1.5 // default night estimate
+            else -> 3.5        // default daytime estimate
         }
 
-        val totalHours = currentLevel / ratePerHour
+        val totalHours = currentLevel / ratePerHour.coerceAtLeast(0.5)
         val hours = totalHours.toInt()
         val minutes = ((totalHours - hours) * 60).toInt()
         return Pair(hours, minutes)
@@ -123,7 +126,6 @@ object ChargePredictivePhysics {
         measuredMinutes: Double,
         currentModel: PredictiveModelData
     ): PredictiveModelData {
-        // Filter out extreme anomalies (e.g. reboot / sensor glitch)
         if (measuredMinutes < 0.2 || measuredMinutes > 45.0) {
             return currentModel.copy(
                 anomalyBudgetRemaining = (currentModel.anomalyBudgetRemaining - 1).coerceAtLeast(0)
@@ -136,10 +138,14 @@ object ChargePredictivePhysics {
         val updatedMap = currentModel.learnedBlockMinutes.toMutableMap()
         updatedMap[block.name] = updatedMinutes
 
+        val newSessions = currentModel.totalSessionsAnalyzed + 1
+        val calcChargeVelocity = 5.0 / updatedMinutes // percent per minute for this block
+
         return currentModel.copy(
             learnedBlockMinutes = updatedMap,
-            totalSessionsAnalyzed = currentModel.totalSessionsAnalyzed + 1,
-            confidenceScore = min(0.98, currentModel.confidenceScore + 0.01)
+            totalSessionsAnalyzed = newSessions,
+            averageChargeVelocityPercentPerMin = calcChargeVelocity,
+            confidenceScore = min(0.98, currentModel.confidenceScore + 0.15)
         )
     }
 
@@ -149,13 +155,13 @@ object ChargePredictivePhysics {
     fun resetHabits(): PredictiveModelData {
         return PredictiveModelData(
             learnedBlockMinutes = emptyMap(),
-            averageChargeVelocityPercentPerMin = 1.82,
-            averageDischargePercentPerHour = 3.2,
+            averageChargeVelocityPercentPerMin = 0.0,
+            averageDischargePercentPerHour = 0.0,
             totalSessionsAnalyzed = 0,
-            confidenceScore = 0.50,
+            confidenceScore = 0.0,
             anomalyBudgetRemaining = 5,
-            daytimeDischargePerHour = 3.8,
-            nightDischargePerHour = 1.4
+            daytimeDischargePerHour = 0.0,
+            nightDischargePerHour = 0.0
         )
     }
 }

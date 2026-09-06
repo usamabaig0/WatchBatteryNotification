@@ -21,7 +21,7 @@ class SmartAlarmReceiver : BroadcastReceiver() {
         if (intent == null) return
 
         val eventType = intent.getStringExtra(WearConstants.EXTRA_EVENT_TYPE) ?: return
-        val batteryLevel = intent.getIntExtra(WearConstants.EXTRA_BATTERY_LEVEL, 82)
+        val batteryLevel = intent.getIntExtra(WearConstants.EXTRA_BATTERY_LEVEL, 0)
         val watchModel = intent.getStringExtra(WearConstants.EXTRA_WATCH_MODEL) ?: "Smartwatch"
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -46,15 +46,21 @@ class SmartAlarmReceiver : BroadcastReceiver() {
             ContextCompat.startForegroundService(context, playerIntent)
 
             // Reschedule repeating alarm if configured
-            val (repeatConfig, repeatInterval) = if (eventType == WearConstants.EVENT_LOW_BATTERY) {
-                Pair(settings.lowBatteryRepeatConfig, settings.lowBatteryRepeatInterval)
+            val repeatConfig: RepeatConfig = if (eventType == WearConstants.EVENT_LOW_BATTERY) {
+                settings.lowBatteryRepeatConfig
             } else {
-                Pair(settings.highBatteryRepeatConfig, settings.highBatteryRepeatInterval)
+                settings.highBatteryRepeatConfig
             }
 
-            if (repeatConfig != RepeatConfig.DO_NOT_REPEAT && repeatInterval > 0) {
+            val repeatIntervalSeconds: Int = if (eventType == WearConstants.EVENT_LOW_BATTERY) {
+                settings.lowBatteryRepeatIntervalSeconds
+            } else {
+                settings.highBatteryRepeatIntervalSeconds
+            }
+
+            if (repeatConfig != RepeatConfig.DO_NOT_REPEAT && repeatIntervalSeconds > 0) {
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                val triggerAtMillis = System.currentTimeMillis() + repeatInterval * 60 * 1000L
+                val triggerAtMillis = System.currentTimeMillis() + repeatIntervalSeconds * 1000L
 
                 val nextAlarmIntent = Intent(context, SmartAlarmReceiver::class.java).apply {
                     action = WearConstants.ACTION_TRIGGER_SMART_ALARM

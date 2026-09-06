@@ -15,7 +15,9 @@ class BatteryTileService : TileService() {
 
     override fun onTileRequest(requestParams: TileRequest): ListenableFuture<Tile> {
         val prefs = getSharedPreferences("wear_battery_prefs", Context.MODE_PRIVATE)
-        val level = prefs.getInt("last_battery_level", 82)
+        val bm = getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
+        val sysLevel = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        val level = if (sysLevel in 0..100) sysLevel else prefs.getInt("last_battery_level", 100)
         val isCharging = prefs.getBoolean("last_charging_state", false)
 
         val statusText = if (isCharging) "Charging" else "Discharging"

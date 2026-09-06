@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -38,23 +39,24 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val colors = WearBatteryTheme.colors
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(horizontal = WearBatterySpacing.lg, vertical = WearBatterySpacing.md)
     ) {
         Text(
             text = "Settings",
             style = WearBatteryTypography.screenTitle,
-            color = DarkTextPrimary
+            color = colors.textPrimary
         )
         Text(
             text = "Alerts, audio loudness, repetition & styling",
             style = WearBatteryTypography.secondary,
-            color = DarkTextSecondary
+            color = colors.textSecondary
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -70,10 +72,10 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "High charge alert", color = DarkTextPrimary, fontSize = 15.sp)
+                Text(text = "High charge alert", color = colors.textPrimary, fontSize = 15.sp)
                 Surface(
                     shape = RoundedCornerShape(WearBatteryRadius.pill),
-                    color = DarkSurfaceElevated
+                    color = colors.surfaceElevated
                 ) {
                     Text(
                         text = "${settings.highBatteryThreshold}%",
@@ -91,7 +93,7 @@ fun SettingsScreen(
                 colors = SliderDefaults.colors(
                     thumbColor = StatusConnected,
                     activeTrackColor = StatusConnected,
-                    inactiveTrackColor = DarkBorder
+                    inactiveTrackColor = colors.border
                 )
             )
 
@@ -103,10 +105,10 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Low battery alert", color = DarkTextPrimary, fontSize = 15.sp)
+                Text(text = "Low battery alert", color = colors.textPrimary, fontSize = 15.sp)
                 Surface(
                     shape = RoundedCornerShape(WearBatteryRadius.pill),
-                    color = DarkSurfaceElevated
+                    color = colors.surfaceElevated
                 ) {
                     Text(
                         text = "${settings.lowBatteryThreshold}%",
@@ -124,7 +126,7 @@ fun SettingsScreen(
                 colors = SliderDefaults.colors(
                     thumbColor = StatusCritical,
                     activeTrackColor = StatusCritical,
-                    inactiveTrackColor = DarkBorder
+                    inactiveTrackColor = colors.border
                 )
             )
         }
@@ -146,7 +148,7 @@ fun SettingsScreen(
             onVoiceToggle = { onUpdateSettings { s -> s.copy(phoneStartVoice = it) } },
             ttsText = settings.customTtsTextStart,
             onTtsChange = { onUpdateSettings { s -> s.copy(customTtsTextStart = it) } },
-            onTestNotification = { testAlert(context, WearConstants.EVENT_CHARGING_STARTED) },
+            onTestNotification = { testAlert(context, WearConstants.EVENT_CHARGING_STARTED, settings.watchModel) },
             accentColor = accentColor
         )
 
@@ -163,7 +165,7 @@ fun SettingsScreen(
             onVoiceToggle = { onUpdateSettings { s -> s.copy(phoneStopVoice = it) } },
             ttsText = settings.customTtsTextStop,
             onTtsChange = { onUpdateSettings { s -> s.copy(customTtsTextStop = it) } },
-            onTestNotification = { testAlert(context, WearConstants.EVENT_CHARGING_STOPPED) },
+            onTestNotification = { testAlert(context, WearConstants.EVENT_CHARGING_STOPPED, settings.watchModel) },
             accentColor = accentColor
         )
 
@@ -180,7 +182,7 @@ fun SettingsScreen(
             onVoiceToggle = { onUpdateSettings { s -> s.copy(phoneFullVoice = it) } },
             ttsText = settings.customTtsTextFull,
             onTtsChange = { onUpdateSettings { s -> s.copy(customTtsTextFull = it) } },
-            onTestNotification = { testAlert(context, WearConstants.EVENT_FULLY_CHARGED) },
+            onTestNotification = { testAlert(context, WearConstants.EVENT_FULLY_CHARGED, settings.watchModel) },
             accentColor = accentColor
         )
 
@@ -197,7 +199,7 @@ fun SettingsScreen(
             onVoiceToggle = { onUpdateSettings { s -> s.copy(phoneLowVoice = it) } },
             ttsText = settings.customTtsTextLow,
             onTtsChange = { onUpdateSettings { s -> s.copy(customTtsTextLow = it) } },
-            onTestNotification = { testAlert(context, WearConstants.EVENT_LOW_BATTERY) },
+            onTestNotification = { testAlert(context, WearConstants.EVENT_LOW_BATTERY, settings.watchModel) },
             accentColor = accentColor
         )
 
@@ -214,7 +216,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Alert Volume", color = DarkTextPrimary, fontSize = 15.sp)
+                Text(text = "Alert Volume", color = colors.textPrimary, fontSize = 15.sp)
                 Text(text = "${settings.notificationVolume}%", color = accentColor, fontSize = 14.sp)
             }
             Slider(
@@ -224,7 +226,7 @@ fun SettingsScreen(
                 colors = SliderDefaults.colors(
                     thumbColor = accentColor,
                     activeTrackColor = accentColor,
-                    inactiveTrackColor = DarkBorder
+                    inactiveTrackColor = colors.border
                 )
             )
 
@@ -237,8 +239,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Bypass Do Not Disturb (DND)", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Plays as an alarm even if silent", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Bypass Do Not Disturb (DND)", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(text = "Plays as an alarm even if silent", color = colors.textSecondary, fontSize = 12.sp)
                 }
                 Switch(
                     checked = settings.volumeBypassDnd,
@@ -272,8 +274,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Force Phone Speaker", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Audible chime even with headphones connected", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Force Phone Speaker", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(text = "Audible chime even with headphones connected", color = colors.textSecondary, fontSize = 12.sp)
                 }
                 Switch(
                     checked = settings.volumeForcePhoneSpeaker,
@@ -291,8 +293,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Smart Screen-Aware Volume", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Gentle chime if holding phone, loud if locked", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Smart Screen-Aware Volume", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(text = "Gentle chime if holding phone, loud if locked", color = colors.textSecondary, fontSize = 12.sp)
                 }
                 Switch(
                     checked = settings.smartVolumeEnabled,
@@ -314,7 +316,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Enable Vibrations", color = DarkTextPrimary, fontSize = 15.sp)
+                Text(text = "Enable Vibrations", color = colors.textPrimary, fontSize = 15.sp)
                 Switch(
                     checked = settings.vibrationEnabled,
                     onCheckedChange = { onUpdateSettings { s -> s.copy(vibrationEnabled = it) } },
@@ -324,7 +326,7 @@ fun SettingsScreen(
 
             if (settings.vibrationEnabled) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "Pattern:", color = DarkTextSecondary, fontSize = 13.sp)
+                Text(text = "Pattern:", color = colors.textSecondary, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(6.dp))
 
                 VibrationPattern.values().forEach { pattern ->
@@ -341,7 +343,7 @@ fun SettingsScreen(
                             colors = RadioButtonDefaults.colors(selectedColor = accentColor)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = pattern.displayName, color = DarkTextPrimary, fontSize = 14.sp)
+                        Text(text = pattern.displayName, color = colors.textPrimary, fontSize = 14.sp)
                     }
                 }
             }
@@ -360,8 +362,16 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Repeat Low Battery Alert", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Repeats every ${settings.lowBatteryRepeatInterval} min until docked", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Repeat Low Battery Alert", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(
+                        text = if (settings.lowBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT) {
+                            "Repeats every ${RepeatIntervalPresets.formatInterval(settings.lowBatteryRepeatIntervalSeconds)} until docked"
+                        } else {
+                            "Do not repeat"
+                        },
+                        color = colors.textSecondary,
+                        fontSize = 12.sp
+                    )
                 }
                 Switch(
                     checked = settings.lowBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT,
@@ -374,7 +384,22 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            if (settings.lowBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Repeat Interval (5 sec to 10 hours):",
+                    color = colors.textSecondary,
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                RepeatIntervalSelector(
+                    selectedSeconds = settings.lowBatteryRepeatIntervalSeconds,
+                    onSelect = { sec -> onUpdateSettings { s -> s.copy(lowBatteryRepeatIntervalSeconds = sec) } },
+                    accentColor = accentColor
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -382,8 +407,16 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Repeat Charge Target Alert", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Repeats every ${settings.highBatteryRepeatInterval} min until unplugged", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Repeat Charge Target Alert", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(
+                        text = if (settings.highBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT) {
+                            "Repeats every ${RepeatIntervalPresets.formatInterval(settings.highBatteryRepeatIntervalSeconds)} until unplugged"
+                        } else {
+                            "Do not repeat"
+                        },
+                        color = colors.textSecondary,
+                        fontSize = 12.sp
+                    )
                 }
                 Switch(
                     checked = settings.highBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT,
@@ -393,6 +426,21 @@ fun SettingsScreen(
                         }
                     },
                     colors = SwitchDefaults.colors(checkedTrackColor = accentColor)
+                )
+            }
+
+            if (settings.highBatteryRepeatConfig != RepeatConfig.DO_NOT_REPEAT) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Repeat Interval (5 sec to 10 hours):",
+                    color = colors.textSecondary,
+                    fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                RepeatIntervalSelector(
+                    selectedSeconds = settings.highBatteryRepeatIntervalSeconds,
+                    onSelect = { sec -> onUpdateSettings { s -> s.copy(highBatteryRepeatIntervalSeconds = sec) } },
+                    accentColor = accentColor
                 )
             }
         }
@@ -410,8 +458,8 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Persistent Charging Bar", color = DarkTextPrimary, fontSize = 15.sp)
-                    Text(text = "Live battery progress bar in notification drawer", color = DarkTextSecondary, fontSize = 12.sp)
+                    Text(text = "Persistent Charging Bar", color = colors.textPrimary, fontSize = 15.sp)
+                    Text(text = "Live battery progress bar in notification drawer", color = colors.textSecondary, fontSize = 12.sp)
                 }
                 Switch(
                     checked = settings.chargingNotificationEnabled,
@@ -442,7 +490,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         TelemetryCard {
-            Text(text = "Color Theme Mode", color = DarkTextPrimary, fontSize = 15.sp)
+            Text(text = "Color Theme Mode", color = colors.textPrimary, fontSize = 15.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -464,7 +512,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "Accent Color (5 Themes)", color = DarkTextPrimary, fontSize = 15.sp)
+            Text(text = "Accent Color (5 Themes)", color = colors.textPrimary, fontSize = 15.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -480,7 +528,7 @@ fun SettingsScreen(
                             .background(Color(android.graphics.Color.parseColor(accent.hex)))
                             .border(
                                 width = if (isSelected) 3.dp else 1.dp,
-                                color = if (isSelected) Color.White else DarkBorder,
+                                color = if (isSelected) colors.textPrimary else colors.border,
                                 shape = CircleShape
                             )
                             .clickable { onUpdateSettings { s -> s.copy(accentColor = accent) } }
@@ -493,11 +541,39 @@ fun SettingsScreen(
     }
 }
 
-private fun testAlert(context: Context, eventType: String) {
+@Composable
+private fun RepeatIntervalSelector(
+    selectedSeconds: Int,
+    onSelect: (Int) -> Unit,
+    accentColor: Color
+) {
+    val scrollState = rememberScrollState()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        RepeatIntervalPresets.PRESETS_SECONDS.forEach { seconds ->
+            val isSelected = selectedSeconds == seconds
+            FilterChip(
+                selected = isSelected,
+                onClick = { onSelect(seconds) },
+                label = { Text(text = RepeatIntervalPresets.formatInterval(seconds), fontSize = 12.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = accentColor,
+                    selectedLabelColor = Color.White
+                )
+            )
+        }
+    }
+}
+
+private fun testAlert(context: Context, eventType: String, watchModel: String) {
     val intent = Intent(context, NotificationPlayerService::class.java).apply {
         putExtra(WearConstants.EXTRA_EVENT_TYPE, eventType)
-        putExtra(WearConstants.EXTRA_BATTERY_LEVEL, 82)
-        putExtra(WearConstants.EXTRA_WATCH_MODEL, "Galaxy Watch 6")
+        putExtra(WearConstants.EXTRA_BATTERY_LEVEL, 80)
+        putExtra(WearConstants.EXTRA_WATCH_MODEL, watchModel.ifBlank { "Smartwatch" })
     }
     ContextCompat.startForegroundService(context, intent)
 }

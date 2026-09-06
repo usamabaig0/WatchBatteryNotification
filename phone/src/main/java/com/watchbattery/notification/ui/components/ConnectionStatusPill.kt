@@ -17,6 +17,7 @@ import com.watchbattery.notification.ui.theme.*
 
 @Composable
 fun ConnectionStatusPill(status: ConnectionStatus, modifier: Modifier = Modifier) {
+    val colors = WearBatteryTheme.colors
     val (dotColor, text) = when (status) {
         ConnectionStatus.CONNECTED -> Pair(StatusConnected, "Connected")
         ConnectionStatus.CONNECTING -> Pair(StatusConnecting, "Connecting...")
@@ -27,8 +28,8 @@ fun ConnectionStatusPill(status: ConnectionStatus, modifier: Modifier = Modifier
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(RoundedCornerShape(WearBatteryRadius.pill))
-            .background(DarkSurfaceElevated)
-            .border(1.dp, DarkBorder, RoundedCornerShape(WearBatteryRadius.pill))
+            .background(colors.surfaceElevated)
+            .border(1.dp, colors.border, RoundedCornerShape(WearBatteryRadius.pill))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Box(
@@ -40,7 +41,7 @@ fun ConnectionStatusPill(status: ConnectionStatus, modifier: Modifier = Modifier
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = text,
-            color = DarkTextPrimary,
+            color = colors.textPrimary,
             fontSize = 12.sp,
             style = WearBatteryTypography.label
         )

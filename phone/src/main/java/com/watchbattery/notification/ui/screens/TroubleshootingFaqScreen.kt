@@ -32,23 +32,24 @@ import com.watchbattery.notification.ui.theme.*
 fun TroubleshootingFaqScreen(watchModel: String, accentColor: Color) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val colors = WearBatteryTheme.colors
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(horizontal = WearBatterySpacing.lg, vertical = WearBatterySpacing.md)
     ) {
         Text(
             text = "Help & Troubleshooting",
             style = WearBatteryTypography.screenTitle,
-            color = DarkTextPrimary
+            color = colors.textPrimary
         )
         Text(
             text = "Reliability guides, FAQ & Developer support",
             style = WearBatteryTypography.secondary,
-            color = DarkTextSecondary
+            color = colors.textSecondary
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -138,19 +139,19 @@ fun TroubleshootingFaqScreen(watchModel: String, accentColor: Color) {
             Text(
                 text = "Contact Developer",
                 style = WearBatteryTypography.sectionTitle,
-                color = DarkTextPrimary
+                color = colors.textPrimary
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Have feedback, found a bug, or have a new watch model to report?",
-                color = DarkTextSecondary,
+                color = colors.textSecondary,
                 fontSize = 13.sp
             )
             Spacer(modifier = Modifier.height(14.dp))
             Button(
                 onClick = {
                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:wearbatterynot@gmail.com")
+                        data = Uri.parse("mailto:watchbatterymonitor@gmail.com")
                         putExtra(Intent.EXTRA_SUBJECT, "Watch Battery Notification Feedback ($watchModel)")
                     }
                     runCatching { context.startActivity(emailIntent) }.onFailure {
@@ -174,12 +175,12 @@ fun TroubleshootingFaqScreen(watchModel: String, accentColor: Color) {
             Text(
                 text = "Developer Tip Jar",
                 style = WearBatteryTypography.sectionTitle,
-                color = DarkTextPrimary
+                color = colors.textPrimary
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Enjoying clean battery alerts? Support independent development:",
-                color = DarkTextSecondary,
+                color = colors.textSecondary,
                 fontSize = 13.sp
             )
             Spacer(modifier = Modifier.height(14.dp))
@@ -194,11 +195,11 @@ fun TroubleshootingFaqScreen(watchModel: String, accentColor: Color) {
                             Toast.makeText(context, "Thank you for supporting development!", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(WearBatteryRadius.button),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = DarkTextPrimary),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(DarkBorder)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textPrimary),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(colors.border)),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(text = item, fontSize = 11.sp, color = DarkTextPrimary)
+                        Text(text = item, fontSize = 11.sp, color = colors.textPrimary)
                     }
                 }
             }
@@ -218,14 +219,15 @@ private fun FaqAccordion(
     accentColor: Color
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val colors = WearBatteryTheme.colors
 
     Surface(
         shape = RoundedCornerShape(WearBatteryRadius.card),
-        color = DarkSurface,
+        color = colors.surface,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WearBatteryRadius.card))
-            .border(1.dp, DarkBorder, RoundedCornerShape(WearBatteryRadius.card))
+            .border(1.dp, colors.border, RoundedCornerShape(WearBatteryRadius.card))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -235,29 +237,29 @@ private fun FaqAccordion(
                     .clickable { expanded = !expanded }
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = title, style = WearBatteryTypography.sectionTitle, color = DarkTextPrimary)
-                    Text(text = preview, style = WearBatteryTypography.secondary, color = DarkTextSecondary)
+                    Text(text = title, style = WearBatteryTypography.sectionTitle, color = colors.textPrimary)
+                    Text(text = preview, style = WearBatteryTypography.secondary, color = colors.textSecondary)
                 }
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = null,
-                        tint = DarkTextSecondary
+                        tint = colors.textSecondary
                     )
                 }
             }
 
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
-                    Divider(color = DarkBorder, thickness = 1.dp)
+                    Divider(color = colors.border, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text(text = details, color = DarkTextSecondary, fontSize = 13.sp, lineHeight = 19.sp)
+                    Text(text = details, color = colors.textSecondary, fontSize = 13.sp, lineHeight = 19.sp)
                     if (actionButtonText != null && onAction != null) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
                             onClick = onAction,
                             shape = RoundedCornerShape(WearBatteryRadius.button),
-                            colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceElevated)
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceElevated)
                         ) {
                             Text(text = actionButtonText, color = accentColor, fontSize = 13.sp)
                         }

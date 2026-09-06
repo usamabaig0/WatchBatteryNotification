@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.watchbattery.notification.core.model.AccentColor
 import com.watchbattery.notification.core.model.ColorTheme
@@ -21,6 +23,27 @@ data class WearBatteryColors(
     val accentSoft: Color,
     val isDark: Boolean
 )
+
+val LocalWearBatteryColors = staticCompositionLocalOf<WearBatteryColors> {
+    WearBatteryColors(
+        background = DarkBackground,
+        surface = DarkSurface,
+        surfaceElevated = DarkSurfaceElevated,
+        border = DarkBorder,
+        textPrimary = DarkTextPrimary,
+        textSecondary = DarkTextSecondary,
+        textDisabled = DarkTextDisabled,
+        accent = DarkAccentDefault,
+        accentSoft = DarkAccentSoft,
+        isDark = true
+    )
+}
+
+object WearBatteryTheme {
+    val colors: WearBatteryColors
+        @Composable
+        get() = LocalWearBatteryColors.current
+}
 
 @Composable
 fun WatchBatteryTheme(
@@ -84,8 +107,12 @@ fun WatchBatteryTheme(
         )
     }
 
-    MaterialTheme(
-        colorScheme = materialColorScheme,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalWearBatteryColors provides customColors
+    ) {
+        MaterialTheme(
+            colorScheme = materialColorScheme,
+            content = content
+        )
+    }
 }

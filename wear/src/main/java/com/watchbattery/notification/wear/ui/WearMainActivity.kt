@@ -35,13 +35,18 @@ import com.watchbattery.notification.wear.receiver.WatchBatteryReceiver
 class WearMainActivity : ComponentActivity() {
 
     private var batteryReceiver: BroadcastReceiver? = null
-    private val batteryLevelState = mutableStateOf(82)
+    private val batteryLevelState = mutableStateOf(0)
     private val isChargingState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Read initial battery state
+        // Read initial battery state from system
+        val bm = getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val realLevel = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        if (realLevel in 0..100) {
+            batteryLevelState.value = realLevel
+        }
         val initialFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         val initialBattery = registerReceiver(null, initialFilter)
         updateBatteryFromIntent(initialBattery)

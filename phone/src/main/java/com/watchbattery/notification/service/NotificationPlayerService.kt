@@ -48,8 +48,8 @@ class NotificationPlayerService : Service(), TextToSpeech.OnInitListener {
         if (intent == null) return START_NOT_STICKY
 
         val eventType = intent.getStringExtra(WearConstants.EXTRA_EVENT_TYPE) ?: WearConstants.EVENT_FULLY_CHARGED
-        val batteryLevel = intent.getIntExtra(WearConstants.EXTRA_BATTERY_LEVEL, 82)
-        val watchModel = intent.getStringExtra(WearConstants.EXTRA_WATCH_MODEL) ?: "Galaxy Watch 6"
+        val batteryLevel = intent.getIntExtra(WearConstants.EXTRA_BATTERY_LEVEL, 0)
+        val watchModel = intent.getStringExtra(WearConstants.EXTRA_WATCH_MODEL)?.ifBlank { "Watch" } ?: "Watch"
 
         // Put service into foreground immediately with status notification
         val foregroundNotification = buildForegroundNotification(eventType, batteryLevel, watchModel)

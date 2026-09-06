@@ -35,14 +35,15 @@ fun EventConfigCard(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val colors = WearBatteryTheme.colors
 
     Surface(
         shape = RoundedCornerShape(WearBatteryRadius.card),
-        color = DarkSurface,
+        color = colors.surface,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WearBatteryRadius.card))
-            .border(1.dp, DarkBorder, RoundedCornerShape(WearBatteryRadius.card))
+            .border(1.dp, colors.border, RoundedCornerShape(WearBatteryRadius.card))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header Row (Click to toggle expansion)
@@ -65,12 +66,12 @@ fun EventConfigCard(
                     Text(
                         text = title,
                         style = WearBatteryTypography.sectionTitle,
-                        color = DarkTextPrimary
+                        color = colors.textPrimary
                     )
                     Text(
                         text = subtitle,
                         style = WearBatteryTypography.secondary,
-                        color = DarkTextSecondary
+                        color = colors.textSecondary
                     )
                 }
 
@@ -82,8 +83,8 @@ fun EventConfigCard(
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = accentColor,
-                        uncheckedThumbColor = DarkTextDisabled,
-                        uncheckedTrackColor = DarkSurfaceElevated
+                        uncheckedThumbColor = colors.textDisabled,
+                        uncheckedTrackColor = colors.surfaceElevated
                     )
                 )
 
@@ -91,7 +92,7 @@ fun EventConfigCard(
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = "Expand",
-                        tint = DarkTextSecondary
+                        tint = colors.textSecondary
                     )
                 }
             }
@@ -103,7 +104,7 @@ fun EventConfigCard(
                         .fillMaxWidth()
                         .padding(top = 16.dp)
                 ) {
-                    Divider(color = DarkBorder, thickness = 1.dp)
+                    Divider(color = colors.border, thickness = 1.dp)
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -113,7 +114,7 @@ fun EventConfigCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Sound Chime", color = DarkTextPrimary, fontSize = 14.sp)
+                        Text(text = "Sound Chime", color = colors.textPrimary, fontSize = 14.sp)
                         Switch(
                             checked = soundEnabled,
                             onCheckedChange = onSoundToggle,
@@ -129,7 +130,7 @@ fun EventConfigCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Voice Alert (TTS)", color = DarkTextPrimary, fontSize = 14.sp)
+                        Text(text = "Voice Alert (TTS)", color = colors.textPrimary, fontSize = 14.sp)
                         Switch(
                             checked = voiceEnabled,
                             onCheckedChange = onVoiceToggle,
@@ -145,18 +146,18 @@ fun EventConfigCard(
                             label = { Text("Voice Text (#bat = battery %)") },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = accentColor,
-                                unfocusedBorderColor = DarkBorder,
-                                focusedTextColor = DarkTextPrimary,
-                                unfocusedTextColor = DarkTextPrimary
+                                unfocusedBorderColor = colors.border,
+                                focusedTextColor = colors.textPrimary,
+                                unfocusedTextColor = colors.textPrimary
                             ),
                             shape = RoundedCornerShape(WearBatteryRadius.input),
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Preview: ${ttsText.replace("#bat", "82")}",
+                            text = "Preview: ${ttsText.replace("#bat", "80")}",
                             fontSize = 12.sp,
-                            color = DarkTextSecondary
+                            color = colors.textSecondary
                         )
                     }
 
@@ -166,12 +167,12 @@ fun EventConfigCard(
                     Button(
                         onClick = onTestNotification,
                         shape = RoundedCornerShape(WearBatteryRadius.button),
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceElevated),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceElevated),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = accentColor)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Test Notification Preview", color = DarkTextPrimary)
+                        Text(text = "Test Notification Preview", color = colors.textPrimary)
                     }
                 }
             }

@@ -29,6 +29,46 @@ enum class RepeatConfig(val displayName: String) {
     UNTIL_UNPLUGGED("Until Unplugged")
 }
 
+object RepeatIntervalPresets {
+    val PRESETS_SECONDS = listOf(
+        5,      // 5 seconds
+        10,     // 10 seconds
+        15,     // 15 seconds
+        30,     // 30 seconds
+        45,     // 45 seconds
+        60,     // 1 minute
+        120,    // 2 minutes
+        300,    // 5 minutes
+        600,    // 10 minutes
+        900,    // 15 minutes
+        1800,   // 30 minutes
+        3600,   // 1 hour
+        7200,   // 2 hours
+        10800,  // 3 hours
+        18000,  // 5 hours
+        28800,  // 8 hours
+        36000   // 10 hours
+    )
+
+    fun format(seconds: Int): String {
+        return when {
+            seconds < 60 -> "$seconds sec"
+            seconds < 3600 -> {
+                val mins = seconds / 60
+                val remSec = seconds % 60
+                if (remSec == 0) "$mins min" else "$mins min $remSec sec"
+            }
+            else -> {
+                val hrs = seconds / 3600
+                val remMin = (seconds % 3600) / 60
+                if (remMin == 0) "$hrs hr" else "$hrs hr $remMin min"
+            }
+        }
+    }
+
+    fun formatInterval(seconds: Int): String = format(seconds)
+}
+
 @Serializable
 data class AppSettings(
     // Thresholds
@@ -72,11 +112,11 @@ data class AppSettings(
     val vibrationEnabled: Boolean = true,
     val vibrationPattern: VibrationPattern = VibrationPattern.STANDARD,
 
-    // Repetition & Snooze
+    // Repetition & Snooze (Intervals in SECONDS from 5 seconds to 36000 seconds / 10 hours)
     val lowBatteryRepeatConfig: RepeatConfig = RepeatConfig.DO_NOT_REPEAT,
-    val lowBatteryRepeatInterval: Int = 5,
+    val lowBatteryRepeatIntervalSeconds: Int = 300, // 5 min default
     val highBatteryRepeatConfig: RepeatConfig = RepeatConfig.DO_NOT_REPEAT,
-    val highBatteryRepeatInterval: Int = 5,
+    val highBatteryRepeatIntervalSeconds: Int = 300, // 5 min default
     val smartAlarmTimestamp: Long = 0L,
 
     // Charging Notification Bar
@@ -87,13 +127,16 @@ data class AppSettings(
     val colorTheme: ColorTheme = ColorTheme.SYSTEM,
     val accentColor: AccentColor = AccentColor.PROFESSIONAL_BLUE,
 
-    // Telemetry Cache & Licensing
-    val watchBatteryLevel: Int = 82,
+    // Telemetry Cache & Licensing State (Unset by default until a watch connects)
+    val watchBatteryLevel: Int = -1, // -1 means no reading yet
     val watchChargingStatus: Boolean = false,
-    val watchModel: String = "Galaxy Watch 6",
-    val lastSyncTimestamp: Long = 0L,
-    val watchAppVersionCode: Int = 256,
+    val watchModel: String = "", // Empty means no watch connected yet
+    val lastSyncTimestamp: Long = 0L, // 0 means never synced
+    val watchAppVersionCode: Int = 0,
     val isWatchUpdateAvailable: Boolean = false,
     val trialStartTime: Long = 0L,
     val isPremiumUnlocked: Boolean = true
-)
+) {
+    val isWatchConnected: Boolean
+        get() = watchBatteryLevel >= 0 && watchModel.isNotBlank()
+}

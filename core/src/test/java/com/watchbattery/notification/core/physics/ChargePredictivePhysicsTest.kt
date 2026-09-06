@@ -50,7 +50,7 @@ class ChargePredictivePhysicsTest {
         // Valid update: 2.0 minutes for block B_0_5
         val updated = ChargePredictivePhysics.updateBlockWithSample(ChargeBlock.B_0_5, 2.0, model)
         assertTrue("Learned block map should contain updated value", updated.learnedBlockMinutes.containsKey("B_0_5"))
-        assertEquals(39, updated.totalSessionsAnalyzed)
+        assertEquals(1, updated.totalSessionsAnalyzed)
 
         // Extreme anomaly (e.g. 0.05 min or 120 min) should be rejected and consume anomaly budget
         val anomalyModel = ChargePredictivePhysics.updateBlockWithSample(ChargeBlock.B_0_5, 120.0, updated)

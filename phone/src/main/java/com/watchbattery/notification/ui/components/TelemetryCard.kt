@@ -16,13 +16,14 @@ fun TelemetryCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val colors = WearBatteryTheme.colors
     Surface(
         shape = RoundedCornerShape(WearBatteryRadius.card),
-        color = DarkSurface,
+        color = colors.surface,
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WearBatteryRadius.card))
-            .border(1.dp, DarkBorder, RoundedCornerShape(WearBatteryRadius.card))
+            .border(1.dp, colors.border, RoundedCornerShape(WearBatteryRadius.card))
     ) {
         Column(
             modifier = Modifier

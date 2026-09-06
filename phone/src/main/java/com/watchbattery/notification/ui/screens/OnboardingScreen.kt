@@ -28,6 +28,7 @@ import com.watchbattery.notification.ui.theme.*
 fun OnboardingScreen(onFinished: () -> Unit, accentColor: Color) {
     val context = LocalContext.current
     var currentStep by remember { mutableStateOf(1) }
+    val colors = WearBatteryTheme.colors
 
     val totalSteps = 4
 
@@ -36,7 +37,7 @@ fun OnboardingScreen(onFinished: () -> Unit, accentColor: Color) {
         verticalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(colors.background)
             .padding(24.dp)
     ) {
         // Step Indicator Dots
@@ -49,7 +50,7 @@ fun OnboardingScreen(onFinished: () -> Unit, accentColor: Color) {
             for (step in 1..totalSteps) {
                 Surface(
                     shape = RoundedCornerShape(WearBatteryRadius.pill),
-                    color = if (step == currentStep) accentColor else DarkBorder,
+                    color = if (step == currentStep) accentColor else colors.border,
                     modifier = Modifier
                         .height(6.dp)
                         .width(if (step == currentStep) 24.dp else 8.dp)
@@ -86,7 +87,7 @@ fun OnboardingScreen(onFinished: () -> Unit, accentColor: Color) {
                 actionButton = {
                     Button(
                         onClick = { requestIgnoreBatteryOptimizations(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceElevated),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceElevated),
                         shape = RoundedCornerShape(WearBatteryRadius.button)
                     ) {
                         Text(text = "Allow Background Exemption", color = accentColor)
@@ -129,13 +130,14 @@ private fun OnboardingPageContent(
     accentColor: Color,
     actionButton: (@Composable () -> Unit)? = null
 ) {
+    val colors = WearBatteryTheme.colors
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 16.dp)
     ) {
         Surface(
             shape = RoundedCornerShape(WearBatteryRadius.hero),
-            color = DarkSurfaceElevated,
+            color = colors.surfaceElevated,
             modifier = Modifier.size(96.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -153,7 +155,7 @@ private fun OnboardingPageContent(
         Text(
             text = title,
             style = WearBatteryTypography.screenTitle,
-            color = DarkTextPrimary,
+            color = colors.textPrimary,
             textAlign = TextAlign.Center
         )
 
@@ -162,7 +164,7 @@ private fun OnboardingPageContent(
         Text(
             text = subtitle,
             style = WearBatteryTypography.body,
-            color = DarkTextSecondary,
+            color = colors.textSecondary,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
         )
