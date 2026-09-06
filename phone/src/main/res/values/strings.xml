@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Watch Battery Monitor</string>
+    <string name="app_name">Watch Battery Notification</string>
     <string name="channel_player_name">Battery Alert Player</string>
     <string name="channel_player_desc">Plays alerts, TTS voices, and haptics for watch battery events</string>
     <string name="channel_alarm_name">Smart Reminders and Snooze</string>

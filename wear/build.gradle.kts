@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "pl.example.bateria.wear"
+    namespace = "com.watchbattery.notification.wear"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pl.example.bateria.wear"
+        applicationId = "com.watchbattery.notification.wear"
         minSdk = 30
         targetSdk = 36
         versionCode = 256

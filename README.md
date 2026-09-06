@@ -1,4 +1,4 @@
-# Watch Battery Monitor (Wear Battery Notification v2.5.6)
+# Watch Battery Notification (Wear Battery Notification v2.5.6)
 
 A professional, high-precision battery monitoring and alert utility for Android smartphones and Wear OS smartwatches.
 
@@ -12,8 +12,8 @@ Compiled ready-to-install Android and Wear OS application packages located in `r
 
 | Target | Package Name | Application Name | Min SDK | Target SDK | Artifact Location | Size |
 |---|---|---|---|---|---|---|
-| **Android Handheld** | `pl.example.bateria` | Watch Battery Monitor | 26 (Android 8.0+) | 36 (Android 16) | [`release_apks/WatchBatteryMonitor-Phone.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryMonitor-Phone.apk) | 20 MB |
-| **Wear OS Smartwatch** | `pl.example.bateria.wear` | Watch Battery Monitor | 30 (Wear OS 3+) | 36 (Wear OS 5+) | [`release_apks/WatchBatteryMonitor-WearOS.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryMonitor-WearOS.apk) | 30 MB |
+| **Android Handheld** | `com.watchbattery.notification` | Watch Battery Notification | 26 (Android 8.0+) | 36 (Android 16) | [`release_apks/WatchBatteryNotification-Phone.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryNotification-Phone.apk) | 20 MB |
+| **Wear OS Smartwatch** | `com.watchbattery.notification.wear` | Watch Battery Notification | 30 (Wear OS 3+) | 36 (Wear OS 5+) | [`release_apks/WatchBatteryNotification-WearOS.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryNotification-WearOS.apk) | 30 MB |
 
 ---
 
@@ -74,15 +74,15 @@ Wear Battery Notification/
 ├── build.gradle.kts                         # Root build file
 ├── gradle/libs.versions.toml                # Version catalog (AGP 9.2.1, Kotlin 2.3.21, Compose)
 ├── release_apks/                            # Finalized compiled APK binaries
-│   ├── WatchBatteryMonitor-Phone.apk
-│   └── WatchBatteryMonitor-WearOS.apk
+│   ├── WatchBatteryNotification-Phone.apk
+│   └── WatchBatteryNotification-WearOS.apk
 ├── core/                                    # Shared business logic and telemetry models
 │   └── src/main/java/pl/example/bateria/core/
 │       ├── constants/WearConstants.kt       # Data layer URIs, channels, intent actions
 │       ├── model/BatteryTelemetry.kt        # BatteryStatus, WatchSettingsSync, ConnectionStatus
 │       ├── model/AppSettings.kt             # Full persistent configuration data class
 │       └── physics/ChargeBlock.kt           # Piecewise CC-CV Lithium-Ion predictive physics
-├── phone/                                   # Handheld Android companion app (pl.example.bateria)
+├── phone/                                   # Handheld Android companion app (com.watchbattery.notification)
 │   └── src/main/java/pl/example/bateria/
 │       ├── WatchBatteryApp.kt               # Application class & notification channels
 │       ├── data/AppSettingsRepository.kt    # Reactive DataStore Preferences repository
@@ -97,7 +97,7 @@ Wear Battery Notification/
 │       ├── ui/theme/                               # Colors, tokens, typography, and styling
 │       ├── ui/components/                          # Hero gauge, status pill, cards, event cards
 │       └── ui/screens/                             # Dashboard, Analytics, Settings, FAQ, Onboarding
-└── wear/                                    # Smartwatch Wear OS companion app (pl.example.bateria.wear)
+└── wear/                                    # Smartwatch Wear OS companion app (com.watchbattery.notification.wear)
     └── src/main/java/pl/example/bateria/wear/
         ├── WearBatteryApp.kt                # Watch application class & local cache
         ├── receiver/WatchBatteryReceiver.kt # Sticky BATTERY_CHANGED listener & power dispatcher

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "pl.example.bateria.core"
+    namespace = "com.watchbattery.notification.core"
     compileSdk = 36
 
     defaultConfig {

@@ -19,7 +19,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.WatchBatteryMonitor">
+        android:theme="@style/Theme.WatchBatteryNotification">
 
         <meta-data
             android:name="com.google.android.gms.wearable.android_wear_capabilities"
@@ -28,7 +28,7 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.WatchBatteryMonitor">
+            android:theme="@style/Theme.WatchBatteryNotification">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -38,7 +38,7 @@
         <activity
             android:name=".ui.QuickAlarmActivity"
             android:exported="false"
-            android:theme="@style/Theme.WatchBatteryMonitor.Transparent" />
+            android:theme="@style/Theme.WatchBatteryNotification.Transparent" />
 
         <service
             android:name=".service.PhoneWearableListenerService"
@@ -62,7 +62,7 @@
             android:name=".receiver.SmartAlarmReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="pl.example.bateria.ACTION_TRIGGER_SMART_ALARM" />
+                <action android:name="com.watchbattery.notification.ACTION_TRIGGER_SMART_ALARM" />
             </intent-filter>
         </receiver>
 
@@ -70,10 +70,10 @@
             android:name=".receiver.NotificationActionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="pl.example.bateria.ACTION_SNOOZE" />
-                <action android:name="pl.example.bateria.ACTION_STOP_REPEAT" />
-                <action android:name="pl.example.bateria.ACTION_RESTORE_CHARGING_BAR" />
-                <action android:name="pl.example.bateria.ACTION_DISMISS_CHARGING_BAR" />
+                <action android:name="com.watchbattery.notification.ACTION_SNOOZE" />
+                <action android:name="com.watchbattery.notification.ACTION_STOP_REPEAT" />
+                <action android:name="com.watchbattery.notification.ACTION_RESTORE_CHARGING_BAR" />
+                <action android:name="com.watchbattery.notification.ACTION_DISMISS_CHARGING_BAR" />
             </intent-filter>
         </receiver>
 

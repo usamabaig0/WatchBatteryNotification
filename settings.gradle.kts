@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WatchBatteryMonitor"
+rootProject.name = "WatchBatteryNotification"
 include(":core")
 include(":phone")
 include(":wear")

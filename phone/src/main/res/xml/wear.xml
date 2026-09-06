@@ -2,6 +2,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools"
     tools:keep="@extra/*">
     <string-array name="android_wear_capabilities">
-        <item>bateria_phone_capability</item>
+        <item>watch_battery_phone_capability</item>
     </string-array>
 </resources>
