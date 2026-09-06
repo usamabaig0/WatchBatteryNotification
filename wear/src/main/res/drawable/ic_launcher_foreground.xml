@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Watch Straps (Top & Bottom) -->
+    <path
+        android:fillColor="#20242A"
+        android:strokeColor="#2B3138"
+        android:strokeWidth="1"
+        android:pathData="M44,22 h20 c1.5,0 2,1 2,2.5 v6 h-24 v-6 c0,-1.5 0.5,-2.5 2,-2.5 z" />
+    <path
+        android:fillColor="#20242A"
+        android:strokeColor="#2B3138"
+        android:strokeWidth="1"
+        android:pathData="M42,77 h24 v6 c0,1.5 -0.5,2.5 -2,2.5 h-20 c-1.5,0 -2,-1 -2,-2.5 v-6 z" />
+
+    <!-- Smartwatch Case -->
+    <path
+        android:fillColor="#181B1F"
+        android:strokeColor="#323A46"
+        android:strokeWidth="1.5"
+        android:pathData="M30,30 h48 a14,14 0 0,1 14,14 v20 a14,14 0 0,1 -14,14 h-48 a14,14 0 0,1 -14,-14 v-20 a14,14 0 0,1 14,-14 z" />
+
+    <!-- Watch Dial Inner Ring (Inactive Track) -->
+    <path
+        android:strokeColor="#222831"
+        android:strokeWidth="2.5"
+        android:pathData="M54,34 A20,20 0 1,0 54,74 A20,20 0 1,0 54,34 Z" />
+
+    <!-- Professional Blue Circular Arc (#3B82C4 / #6AAFE4) -->
+    <path
+        android:strokeColor="#3B82C4"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M54,34 A20,20 0 1,1 36,64" />
+
+    <!-- Centered Battery Symbol (Terminal + Body) -->
+    <path
+        android:fillColor="#6AAFE4"
+        android:pathData="M50,40 h8 v2 h-8 z" />
+    <path
+        android:fillColor="#111417"
+        android:strokeColor="#38404A"
+        android:strokeWidth="1.2"
+        android:pathData="M43,42 h22 a4,4 0 0,1 4,4 v16 a4,4 0 0,1 -4,4 h-22 a4,4 0 0,1 -4,-4 v-16 a4,4 0 0,1 4,-4 z" />
+
+    <!-- Lightning Bolt Inside Battery -->
+    <path
+        android:fillColor="#6AAFE4"
+        android:pathData="M56,44 L47,54 h6 L51,64 L61,53 h-6 z" />
+</vector>

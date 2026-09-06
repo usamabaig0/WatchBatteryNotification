@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Watch Battery Monitor</string>
+    <string name="tile_label">Watch Battery</string>
+    <string name="tile_description">Displays current watch battery and sync status</string>
+    <string name="complication_label">Battery Arc</string>
+</resources>
