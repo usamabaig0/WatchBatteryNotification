@@ -19,14 +19,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import android.net.Uri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.watchbattery.notification.WatchBatteryApp
 import com.watchbattery.notification.core.constants.WearConstants
+import com.watchbattery.notification.core.model.ConnectionStatus
+import com.watchbattery.notification.core.model.WatchSettingsSync
 import com.watchbattery.notification.core.physics.PredictiveModelData
 import com.watchbattery.notification.ui.screens.*
 import com.watchbattery.notification.ui.theme.*
@@ -44,6 +50,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         checkPermissions()
+        refreshConnectionState()
 
         setContent {
             val repository = WatchBatteryApp.instance.repository
@@ -73,7 +80,10 @@ class MainActivity : ComponentActivity() {
                         predictiveModel = predictiveModel,
                         batteryHistory = batteryHistory,
                         onUpdateSettings = { transform ->
-                            lifecycleScope.launch { repository.updateSettings(transform) }
+                            lifecycleScope.launch {
+                                repository.updateSettings(transform)
+                                syncSettingsToWatch()
+                            }
                         },
                         onResetHabits = {
                             lifecycleScope.launch {
@@ -81,11 +91,108 @@ class MainActivity : ComponentActivity() {
                                 Toast.makeText(this@MainActivity, "Battery habits reset", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        onOpenOnWatch = { sendRemoteWatchCommand(WearConstants.PATH_OPEN_APP_ON_WATCH) },
-                        onRefreshConnection = { sendRemoteWatchCommand(WearConstants.PATH_REQUEST_STATUS_UPDATE) },
+                        onOpenOnWatch = { openOnWatch() },
+                        onRefreshConnection = {
+                            refreshConnectionState()
+                            sendRemoteWatchCommand(WearConstants.PATH_REQUEST_STATUS_UPDATE)
+                        },
                         accentColor = themeColors.accent
                     )
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshConnectionState()
+    }
+
+    private fun refreshConnectionState() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val nodeClient = Wearable.getNodeClient(this@MainActivity)
+                val nodes = nodeClient.connectedNodes.await()
+                val isConnected = nodes.isNotEmpty()
+                val repo = WatchBatteryApp.instance.repository
+                val status = if (isConnected) ConnectionStatus.CONNECTED else ConnectionStatus.DISCONNECTED
+                repo.setConnectionStatus(status)
+
+                if (isConnected) {
+                    val messageClient = Wearable.getMessageClient(this@MainActivity)
+                    for (node in nodes) {
+                        runCatching {
+                            messageClient.sendMessage(node.id, WearConstants.PATH_REQUEST_STATUS_UPDATE, byteArrayOf()).await()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun openOnWatch() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val nodeClient = Wearable.getNodeClient(this@MainActivity)
+                val nodes = nodeClient.connectedNodes.await()
+                if (nodes.isEmpty()) {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "No watch connected via Bluetooth", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+
+                // Method A: RemoteActivityHelper with deep link watchbattery://open
+                val remoteActivityHelper = RemoteActivityHelper(this@MainActivity)
+                val deepLinkIntent = Intent(Intent.ACTION_VIEW)
+                    .addCategory(Intent.CATEGORY_DEFAULT)
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setData(Uri.parse(WearConstants.DEEP_LINK_URI))
+                    .setPackage("com.watchbattery.notification")
+
+                for (node in nodes) {
+                    runCatching {
+                        remoteActivityHelper.startRemoteActivity(deepLinkIntent, node.id)
+                    }
+                    // Method B: Direct MessageClient trigger
+                    runCatching {
+                        Wearable.getMessageClient(this@MainActivity)
+                            .sendMessage(node.id, WearConstants.PATH_OPEN_APP_ON_WATCH, byteArrayOf()).await()
+                    }
+                }
+                launch(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Opening app on watch...", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                launch(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Error communicating with watch", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun syncSettingsToWatch() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val nodes = Wearable.getNodeClient(this@MainActivity).connectedNodes.await()
+                if (nodes.isEmpty()) return@launch
+
+                val settings = WatchBatteryApp.instance.repository.settingsFlow.value
+                val syncPayload = WatchSettingsSync(
+                    lowBatteryThreshold = settings.lowBatteryThreshold,
+                    highBatteryThreshold = settings.highBatteryThreshold
+                )
+                val bytes = Json.encodeToString(syncPayload).toByteArray(Charsets.UTF_8)
+                val messageClient = Wearable.getMessageClient(this@MainActivity)
+                for (node in nodes) {
+                    runCatching {
+                        messageClient.sendMessage(node.id, WearConstants.PATH_SETTINGS_SYNC_RESPONSE, bytes).await()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

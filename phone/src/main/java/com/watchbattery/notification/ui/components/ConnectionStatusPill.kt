@@ -16,10 +16,20 @@ import com.watchbattery.notification.core.model.ConnectionStatus
 import com.watchbattery.notification.ui.theme.*
 
 @Composable
-fun ConnectionStatusPill(status: ConnectionStatus, modifier: Modifier = Modifier) {
+fun ConnectionStatusPill(
+    status: ConnectionStatus,
+    modifier: Modifier = Modifier,
+    watchBatteryLevel: Int = 0
+) {
     val colors = WearBatteryTheme.colors
     val (dotColor, text) = when (status) {
-        ConnectionStatus.CONNECTED -> Pair(StatusConnected, "Connected")
+        ConnectionStatus.CONNECTED -> {
+            if (watchBatteryLevel < 0) {
+                Pair(StatusConnecting, "Connected (Awaiting Sync)")
+            } else {
+                Pair(StatusConnected, "Connected")
+            }
+        }
         ConnectionStatus.CONNECTING -> Pair(StatusConnecting, "Connecting...")
         ConnectionStatus.DISCONNECTED -> Pair(StatusDisconnected, "Disconnected")
     }

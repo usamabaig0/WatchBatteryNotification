@@ -13,7 +13,7 @@ Compiled ready-to-install Android and Wear OS application packages located in `r
 | Target | Package Name | Application Name | Min SDK | Target SDK | Artifact Location | Size |
 |---|---|---|---|---|---|---|
 | **Android Handheld** | `com.watchbattery.notification` | Watch Battery Notification | 26 (Android 8.0+) | 36 (Android 16) | [`release_apks/WatchBatteryNotification-Phone.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryNotification-Phone.apk) | 20 MB |
-| **Wear OS Smartwatch** | `com.watchbattery.notification.wear` | Watch Battery Notification | 30 (Wear OS 3+) | 36 (Wear OS 5+) | [`release_apks/WatchBatteryNotification-WearOS.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryNotification-WearOS.apk) | 30 MB |
+| **Wear OS Smartwatch** | `com.watchbattery.notification` | Watch Battery Notification | 30 (Wear OS 3+) | 36 (Wear OS 5+) | [`release_apks/WatchBatteryNotification-WearOS.apk`](file:///home/ubuntu/.antigravity-rc/Wear%20Battery%20Notification/release_apks/WatchBatteryNotification-WearOS.apk) | 30 MB |
 
 ---
 

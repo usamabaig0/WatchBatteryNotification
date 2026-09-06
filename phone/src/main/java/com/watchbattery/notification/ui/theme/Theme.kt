@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.watchbattery.notification.core.model.AccentColor
 import com.watchbattery.notification.core.model.ColorTheme
 
@@ -105,6 +106,19 @@ fun WatchBatteryTheme(
             onSurface = customColors.textPrimary,
             outline = customColors.border
         )
+    }
+
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (!view.isInEditMode) {
+        androidx.compose.runtime.SideEffect {
+            val window = (view.context as android.app.Activity).window
+            window.statusBarColor = customColors.background.toArgb()
+            window.navigationBarColor = customColors.background.toArgb()
+            androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !isDark
+                isAppearanceLightNavigationBars = !isDark
+            }
+        }
     }
 
     CompositionLocalProvider(

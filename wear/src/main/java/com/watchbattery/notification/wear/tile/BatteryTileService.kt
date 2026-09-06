@@ -8,12 +8,14 @@ import androidx.wear.tiles.RequestBuilders.*
 import androidx.wear.tiles.TileBuilders.Tile
 import androidx.wear.protolayout.ResourceBuilders as ProtoResourceBuilders
 import com.google.common.util.concurrent.ListenableFuture
+import com.watchbattery.notification.wear.receiver.WatchBatteryReceiver
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
 class BatteryTileService : TileService() {
 
     override fun onTileRequest(requestParams: TileRequest): ListenableFuture<Tile> {
+        WatchBatteryReceiver.forceSendCurrentStatus(this)
         val prefs = getSharedPreferences("wear_battery_prefs", Context.MODE_PRIVATE)
         val bm = getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
         val sysLevel = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1

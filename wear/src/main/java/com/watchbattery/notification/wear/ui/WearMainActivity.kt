@@ -23,8 +23,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.*
+import androidx.wear.remote.interactions.RemoteActivityHelper
+import com.google.android.gms.wearable.CapabilityClient
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,6 +41,24 @@ class WearMainActivity : ComponentActivity() {
     private var batteryReceiver: BroadcastReceiver? = null
     private val batteryLevelState = mutableStateOf(0)
     private val isChargingState = mutableStateOf(false)
+    private val isPhoneConnectedState = mutableStateOf(false)
+    private val isSyncedState = mutableStateOf(false)
+
+    private val capabilityListener = CapabilityClient.OnCapabilityChangedListener { capabilityInfo ->
+        val hasNodes = capabilityInfo.nodes.isNotEmpty()
+        isPhoneConnectedState.value = hasNodes
+        if (!hasNodes) {
+            isSyncedState.value = false
+        }
+    }
+
+    private val messageListener = com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener { messageEvent ->
+        if (messageEvent.path == WearConstants.PATH_SETTINGS_SYNC_RESPONSE ||
+            messageEvent.path == WearConstants.PATH_REQUEST_STATUS_UPDATE) {
+            isPhoneConnectedState.value = true
+            isSyncedState.value = true
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,23 +81,74 @@ class WearMainActivity : ComponentActivity() {
         }
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 
-        // Initial sync request to phone
+        checkPhoneConnection()
         requestSettingsSync()
 
         setContent {
             val level by batteryLevelState
             val isCharging by isChargingState
+            val isPhoneConnected by isPhoneConnectedState
+            val isSynced by isSyncedState
 
             WearBatteryScreen(
                 batteryLevel = level,
                 isCharging = isCharging,
                 watchModel = Build.MODEL ?: "Smartwatch",
+                isPhoneConnected = isPhoneConnected,
+                isSynced = isSynced,
                 onOpenOnPhone = { openOnPhone() },
                 onForceSync = {
-                    WatchBatteryReceiver.queryAndSendCurrentStatus(this)
+                    WatchBatteryReceiver.forceSendCurrentStatus(this)
+                    checkPhoneConnection()
+                    isSyncedState.value = true
                     Toast.makeText(this, "Telemetry synced with phone", Toast.LENGTH_SHORT).show()
                 }
             )
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkPhoneConnection()
+        runCatching {
+            Wearable.getCapabilityClient(this).addListener(
+                capabilityListener,
+                Uri.parse("wear://*/${WearConstants.CAPABILITY_PHONE_APP}"),
+                CapabilityClient.FILTER_ALL
+            )
+        }
+        runCatching {
+            Wearable.getMessageClient(this).addListener(messageListener)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        runCatching {
+            Wearable.getCapabilityClient(this).removeListener(capabilityListener)
+        }
+        runCatching {
+            Wearable.getMessageClient(this).removeListener(messageListener)
+        }
+    }
+
+    private fun checkPhoneConnection() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val nodes = Wearable.getNodeClient(this@WearMainActivity).connectedNodes.await()
+                val isConnected = nodes.isNotEmpty()
+                launch(Dispatchers.Main) {
+                    isPhoneConnectedState.value = isConnected
+                    if (!isConnected) {
+                        isSyncedState.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                launch(Dispatchers.Main) {
+                    isPhoneConnectedState.value = false
+                    isSyncedState.value = false
+                }
+            }
         }
     }
 
@@ -89,15 +162,22 @@ class WearMainActivity : ComponentActivity() {
         val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
         isChargingState.value = (status == BatteryManager.BATTERY_STATUS_CHARGING ||
                 status == BatteryManager.BATTERY_STATUS_FULL)
+        WatchBatteryReceiver.forceSendCurrentStatus(this)
     }
 
     private fun requestSettingsSync() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val nodes = Wearable.getNodeClient(this@WearMainActivity).connectedNodes.await()
-                for (node in nodes) {
-                    Wearable.getMessageClient(this@WearMainActivity)
-                        .sendMessage(node.id, WearConstants.PATH_REQUEST_SETTINGS_SYNC, byteArrayOf()).await()
+                if (nodes.isNotEmpty()) {
+                    for (node in nodes) {
+                        Wearable.getMessageClient(this@WearMainActivity)
+                            .sendMessage(node.id, WearConstants.PATH_REQUEST_SETTINGS_SYNC, byteArrayOf()).await()
+                    }
+                    WatchBatteryReceiver.forceSendCurrentStatus(this@WearMainActivity)
+                    launch(Dispatchers.Main) {
+                        isSyncedState.value = true
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -115,9 +195,24 @@ class WearMainActivity : ComponentActivity() {
                     }
                     return@launch
                 }
+
+                // Method A: RemoteActivityHelper with deep link watchbattery://open
+                val remoteActivityHelper = RemoteActivityHelper(this@WearMainActivity)
+                val deepLinkIntent = Intent(Intent.ACTION_VIEW)
+                    .addCategory(Intent.CATEGORY_DEFAULT)
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .setData(Uri.parse(WearConstants.DEEP_LINK_URI))
+                    .setPackage("com.watchbattery.notification")
+
                 for (node in nodes) {
-                    Wearable.getMessageClient(this@WearMainActivity)
-                        .sendMessage(node.id, WearConstants.PATH_OPEN_APP_ON_PHONE, byteArrayOf()).await()
+                    runCatching {
+                        remoteActivityHelper.startRemoteActivity(deepLinkIntent, node.id)
+                    }
+                    // Method B: Direct MessageClient trigger
+                    runCatching {
+                        Wearable.getMessageClient(this@WearMainActivity)
+                            .sendMessage(node.id, WearConstants.PATH_OPEN_APP_ON_PHONE, byteArrayOf()).await()
+                    }
                 }
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@WearMainActivity, "Opening on phone...", Toast.LENGTH_SHORT).show()
@@ -143,6 +238,8 @@ fun WearBatteryScreen(
     batteryLevel: Int,
     isCharging: Boolean,
     watchModel: String,
+    isPhoneConnected: Boolean,
+    isSynced: Boolean,
     onOpenOnPhone: () -> Unit,
     onForceSync: () -> Unit
 ) {
@@ -198,7 +295,17 @@ fun WearBatteryScreen(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Synced with Phone Badge
+            // Dynamic Phone Connection Badge
+            val badgeColor = when {
+                !isPhoneConnected -> Color(0xFFC95158)
+                isSynced -> successGreen
+                else -> Color(0xFFC58A26)
+            }
+            val badgeText = when {
+                !isPhoneConnected -> "Phone Disconnected"
+                isSynced -> "Synced with Phone"
+                else -> "Connected (Syncing...)"
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -211,11 +318,11 @@ fun WearBatteryScreen(
                     modifier = Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(successGreen)
+                        .background(badgeColor)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Synced with Phone",
+                    text = badgeText,
                     fontSize = 10.sp,
                     color = Color(0xFFF2F4F7)
                 )

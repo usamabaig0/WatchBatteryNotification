@@ -1,11 +1,18 @@
 package com.watchbattery.notification.service
 
+import android.app.ActivityOptions
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -62,18 +69,99 @@ class PhoneWearableListenerService : WearableListenerService() {
             }
 
             WearConstants.PATH_OPEN_APP_ON_PHONE -> {
-                val launchIntent = Intent(this, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                runCatching {
+                    val launchIntent = Intent(this, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        ActivityOptions.makeBasic().apply {
+                            pendingIntentBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                        }.toBundle()
+                    } else null
+                    startActivity(launchIntent, options)
                 }
-                startActivity(launchIntent)
+                showOpenAppNotification()
+            }
+        }
+    }
+
+    override fun onDataChanged(dataEvents: DataEventBuffer) {
+        for (event in dataEvents) {
+            if (event.type == DataEvent.TYPE_CHANGED && event.dataItem.uri.path == WearConstants.PATH_WATCH_STATUS) {
+                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                val level = dataMap.getInt(WearConstants.EXTRA_BATTERY_LEVEL, -1)
+                val isCharging = dataMap.getBoolean(WearConstants.EXTRA_CHARGING_STATUS, false)
+                val model = dataMap.getString(WearConstants.EXTRA_WATCH_MODEL, "Smartwatch")
+                val timestamp = dataMap.getLong(WearConstants.EXTRA_TIMESTAMP, System.currentTimeMillis())
+                val versionCode = dataMap.getInt("watch_app_version_code", 256)
+
+                if (level in 0..100) {
+                    val status = BatteryStatus(
+                        battery_level = level,
+                        is_charging = isCharging,
+                        time = timestamp,
+                        watch_model = model,
+                        watch_app_version_code = versionCode
+                    )
+                    handleStatusUpdate(status)
+                }
+            }
+        }
+    }
+
+    override fun onPeerConnected(peer: Node) {
+        super.onPeerConnected(peer)
+        WatchBatteryApp.instance.repository.setConnectionStatus(ConnectionStatus.CONNECTED)
+        Wearable.getMessageClient(this).sendMessage(peer.id, WearConstants.PATH_REQUEST_STATUS_UPDATE, byteArrayOf())
+    }
+
+    override fun onPeerDisconnected(peer: Node) {
+        super.onPeerDisconnected(peer)
+        scope.launch {
+            val nodes = Wearable.getNodeClient(this@PhoneWearableListenerService).connectedNodes.await()
+            if (nodes.isEmpty()) {
+                WatchBatteryApp.instance.repository.setConnectionStatus(ConnectionStatus.DISCONNECTED)
             }
         }
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        val hasConnectedNodes = capabilityInfo.nodes.any { it.isNearby }
+        val hasConnectedNodes = capabilityInfo.nodes.isNotEmpty()
         val status = if (hasConnectedNodes) ConnectionStatus.CONNECTED else ConnectionStatus.DISCONNECTED
         WatchBatteryApp.instance.repository.setConnectionStatus(status)
+    }
+
+    private fun showOpenAppNotification() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = WearConstants.CHANNEL_ID_ALARM
+        val openIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                pendingIntentBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            }.toBundle()
+        } else {
+            null
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            2001,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            options
+        )
+        val notif = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(com.watchbattery.notification.R.drawable.ic_stat_watch_battery)
+            .setContentTitle("Watch Battery Notification")
+            .setContentText("Tap to open companion app on phone")
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true)
+            .build()
+        notificationManager.notify(2001, notif)
     }
 
     private fun handleStatusUpdate(status: BatteryStatus) {

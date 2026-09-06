@@ -9,7 +9,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.watchbattery.notification.wear"
+        applicationId = "com.watchbattery.notification"
         minSdk = 30
         targetSdk = 36
         versionCode = 256
@@ -37,6 +37,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 }
 

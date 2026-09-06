@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.wear.watchface.complications.data.*
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceService
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
+import com.watchbattery.notification.wear.receiver.WatchBatteryReceiver
 
 class BatteryComplicationService : ComplicationDataSourceService() {
 
@@ -15,6 +16,7 @@ class BatteryComplicationService : ComplicationDataSourceService() {
     }
 
     override fun onComplicationRequest(request: ComplicationRequest, listener: ComplicationRequestListener) {
+        WatchBatteryReceiver.forceSendCurrentStatus(this)
         val prefs = getSharedPreferences("wear_battery_prefs", Context.MODE_PRIVATE)
         val bm = getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
         val sysLevel = bm?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1

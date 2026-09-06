@@ -89,7 +89,7 @@ fun DashboardScreen(
                 style = WearBatteryTypography.appTitle,
                 color = colors.textPrimary
             )
-            ConnectionStatusPill(status = connectionStatus)
+            ConnectionStatusPill(status = connectionStatus, watchBatteryLevel = settings.watchBatteryLevel)
         }
 
         Spacer(modifier = Modifier.height(18.dp))
@@ -178,7 +178,8 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = when {
-                        !isConnected -> "Disconnected"
+                        connectionStatus == ConnectionStatus.DISCONNECTED -> "Disconnected"
+                        settings.watchBatteryLevel < 0 -> "Connected (Awaiting Sync)"
                         settings.watchChargingStatus -> "Charging"
                         else -> "Discharging"
                     },

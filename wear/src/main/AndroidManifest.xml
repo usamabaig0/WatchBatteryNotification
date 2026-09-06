@@ -3,9 +3,11 @@
 
     <uses-feature android:name="android.hardware.type.watch" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <application
         android:name=".WearBatteryApp"
@@ -22,7 +24,7 @@
 
         <meta-data
             android:name="com.google.android.gms.wearable.android_wear_capabilities"
-            android:resource="@xml/wear" />
+            android:resource="@array/android_wear_capabilities" />
 
         <activity
             android:name=".ui.WearMainActivity"
@@ -32,6 +34,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="watchbattery"
+                    android:host="open" />
+            </intent-filter>
         </activity>
 
         <service
@@ -40,6 +50,9 @@
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data android:scheme="wear" android:host="*" android:pathPrefix="/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.CAPABILITY_CHANGED" />
             </intent-filter>
         </service>
 

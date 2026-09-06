@@ -1,6 +1,7 @@
 package com.watchbattery.notification.core.constants
 
 object WearConstants {
+    const val PACKAGE_NAME = "com.watchbattery.notification"
     const val CAPABILITY_WEAR_APP = "watch_battery_notification_capability"
     const val CAPABILITY_PHONE_APP = "watch_battery_phone_capability"
 
@@ -28,6 +29,13 @@ object WearConstants {
     const val EXTRA_EVENT_TYPE = "extra_event_type"
     const val EXTRA_BATTERY_LEVEL = "extra_battery_level"
     const val EXTRA_WATCH_MODEL = "extra_watch_model"
+    const val EXTRA_CHARGING_STATUS = "extra_charging_status"
+    const val EXTRA_TIMESTAMP = "extra_timestamp"
+
+    // Deep Link URIs
+    const val DEEP_LINK_SCHEME = "watchbattery"
+    const val DEEP_LINK_HOST = "open"
+    const val DEEP_LINK_URI = "watchbattery://open"
 
     // Event Types
     const val EVENT_CHARGING_STARTED = "CHARGING_STARTED"

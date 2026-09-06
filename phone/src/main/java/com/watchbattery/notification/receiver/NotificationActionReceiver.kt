@@ -12,6 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.watchbattery.notification.WatchBatteryApp
 import com.watchbattery.notification.core.constants.WearConstants
+import com.watchbattery.notification.core.physics.ChargePredictivePhysics
+import com.watchbattery.notification.core.physics.PredictiveModelData
 import com.watchbattery.notification.service.ChargingNotificationManager
 
 class NotificationActionReceiver : BroadcastReceiver() {
@@ -79,11 +81,16 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     repo.updateSettings { it.copy(chargingNotificationHiddenByUser = false) }
                     val current = repo.settingsFlow.value
                     if (current.watchChargingStatus) {
+                        val estMinutes = ChargePredictivePhysics.calculateMinutesToTarget(
+                            current.watchBatteryLevel,
+                            current.highBatteryThreshold,
+                            PredictiveModelData()
+                        )
                         ChargingNotificationManager.showChargingNotification(
                             context,
                             current.watchBatteryLevel,
                             current.watchModel,
-                            28
+                            estMinutes
                         )
                     }
                 }
