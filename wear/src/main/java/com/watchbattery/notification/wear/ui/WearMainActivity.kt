@@ -1,15 +1,19 @@
 package com.watchbattery.notification.wear.ui
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -44,6 +48,14 @@ class WearMainActivity : ComponentActivity() {
     private val isPhoneConnectedState = mutableStateOf(false)
     private val isSyncedState = mutableStateOf(false)
 
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(this, "Notification permission needed for alerts", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private val capabilityListener = CapabilityClient.OnCapabilityChangedListener { capabilityInfo ->
         val hasNodes = capabilityInfo.nodes.isNotEmpty()
         isPhoneConnectedState.value = hasNodes
@@ -62,6 +74,7 @@ class WearMainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        checkPermissions()
 
         // Read initial battery state from system
         val bm = getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
@@ -129,6 +142,14 @@ class WearMainActivity : ComponentActivity() {
         }
         runCatching {
             Wearable.getMessageClient(this).removeListener(messageListener)
+        }
+    }
+
+    private fun checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 
