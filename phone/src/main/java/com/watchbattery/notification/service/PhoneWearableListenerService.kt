@@ -49,22 +49,27 @@ class PhoneWearableListenerService : WearableListenerService() {
 
             WearConstants.PATH_WATCH_CHARGING_STARTED -> {
                 val level = extractInt(data)
+                hasFiredHighBatteryAlertForSession = false
+                hasFiredLowBatteryAlertForSession = false
                 triggerAlert(WearConstants.EVENT_CHARGING_STARTED, level)
             }
 
             WearConstants.PATH_WATCH_CHARGING_STOPPED -> {
                 val level = extractInt(data)
+                hasFiredHighBatteryAlertForSession = false
                 triggerAlert(WearConstants.EVENT_CHARGING_STOPPED, level)
                 ChargingNotificationManager.dismissChargingNotification(applicationContext)
             }
 
             WearConstants.PATH_WATCH_FULLY_CHARGED -> {
                 val level = extractInt(data)
+                hasFiredHighBatteryAlertForSession = true
                 triggerAlert(WearConstants.EVENT_FULLY_CHARGED, level)
             }
 
             WearConstants.PATH_WATCH_LOW_BATTERY -> {
                 val level = extractInt(data)
+                hasFiredLowBatteryAlertForSession = true
                 triggerAlert(WearConstants.EVENT_LOW_BATTERY, level)
             }
 
@@ -199,10 +204,21 @@ class PhoneWearableListenerService : WearableListenerService() {
             }
 
             // Check if battery level crossed thresholds
-            if (status.battery_level <= prevSettings.lowBatteryThreshold && !status.is_charging && prevSettings.watchBatteryLevel > prevSettings.lowBatteryThreshold) {
-                triggerAlert(WearConstants.EVENT_LOW_BATTERY, status.battery_level)
-            } else if (status.battery_level >= prevSettings.highBatteryThreshold && status.is_charging && prevSettings.watchBatteryLevel < prevSettings.highBatteryThreshold) {
-                triggerAlert(WearConstants.EVENT_FULLY_CHARGED, status.battery_level)
+            if (status.is_charging) {
+                if (status.battery_level >= prevSettings.highBatteryThreshold && !hasFiredHighBatteryAlertForSession) {
+                    hasFiredHighBatteryAlertForSession = true
+                    triggerAlert(WearConstants.EVENT_FULLY_CHARGED, status.battery_level)
+                } else if (status.battery_level < prevSettings.highBatteryThreshold) {
+                    hasFiredHighBatteryAlertForSession = false
+                }
+            } else {
+                hasFiredHighBatteryAlertForSession = false
+                if (status.battery_level <= prevSettings.lowBatteryThreshold && !hasFiredLowBatteryAlertForSession) {
+                    hasFiredLowBatteryAlertForSession = true
+                    triggerAlert(WearConstants.EVENT_LOW_BATTERY, status.battery_level)
+                } else if (status.battery_level > prevSettings.lowBatteryThreshold + 5) {
+                    hasFiredLowBatteryAlertForSession = false
+                }
             }
         }
     }
@@ -328,6 +344,25 @@ class PhoneWearableListenerService : WearableListenerService() {
             if (data.size == 4) ByteBuffer.wrap(data).int else String(data, Charsets.UTF_8).toInt()
         } catch (e: Exception) {
             80
+        }
+    }
+
+    companion object {
+        private var hasFiredHighBatteryAlertForSession = false
+        private var hasFiredLowBatteryAlertForSession = false
+
+        internal fun resetSessionAlertStates() {
+            hasFiredHighBatteryAlertForSession = false
+            hasFiredLowBatteryAlertForSession = false
+        }
+
+        internal fun getHighBatteryAlertFired(): Boolean = hasFiredHighBatteryAlertForSession
+        internal fun getLowBatteryAlertFired(): Boolean = hasFiredLowBatteryAlertForSession
+        internal fun setHighBatteryAlertFired(value: Boolean) {
+            hasFiredHighBatteryAlertForSession = value
+        }
+        internal fun setLowBatteryAlertFired(value: Boolean) {
+            hasFiredLowBatteryAlertForSession = value
         }
     }
 }

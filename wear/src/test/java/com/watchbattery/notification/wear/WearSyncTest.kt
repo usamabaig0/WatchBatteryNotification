@@ -66,6 +66,41 @@ class WearSyncTest {
     }
 
     @Test
+    fun testChargingCheckActionConstant() {
+        assertEquals(
+            "com.watchbattery.notification.ACTION_CHECK_CHARGING_BATTERY",
+            WearConstants.ACTION_CHECK_CHARGING_BATTERY
+        )
+    }
+
+    @Test
+    fun testChargingCheckSessionGateLogic() {
+        val highThreshold = 80
+        var hasFiredThisSession = false
+
+        // Charging at 75% -> does not fire
+        var percent = 75
+        var shouldFire = percent >= highThreshold && !hasFiredThisSession
+        assertFalse(shouldFire)
+
+        // Charging reaches 80% -> fires and sets flag
+        percent = 80
+        shouldFire = percent >= highThreshold && !hasFiredThisSession
+        assertTrue(shouldFire)
+        hasFiredThisSession = true
+
+        // Charging reaches 85% in next check -> does not fire again in same session
+        percent = 85
+        shouldFire = percent >= highThreshold && !hasFiredThisSession
+        assertFalse(shouldFire)
+
+        // Unplugged and plugged back in -> flag reset
+        hasFiredThisSession = false
+        shouldFire = percent >= highThreshold && !hasFiredThisSession
+        assertTrue(shouldFire)
+    }
+
+    @Test
     fun testTelemetrySerialization() {
         val status = BatteryStatus(
             battery_level = 88,

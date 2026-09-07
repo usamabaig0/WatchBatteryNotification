@@ -24,6 +24,7 @@ object WearConstants {
     const val ACTION_PLAY_NOTIFICATION = "com.watchbattery.notification.ACTION_PLAY_NOTIFICATION"
     const val ACTION_RESTORE_CHARGING_BAR = "com.watchbattery.notification.ACTION_RESTORE_CHARGING_BAR"
     const val ACTION_DISMISS_CHARGING_BAR = "com.watchbattery.notification.ACTION_DISMISS_CHARGING_BAR"
+    const val ACTION_CHECK_CHARGING_BATTERY = "com.watchbattery.notification.ACTION_CHECK_CHARGING_BATTERY"
 
     // Extras
     const val EXTRA_EVENT_TYPE = "extra_event_type"

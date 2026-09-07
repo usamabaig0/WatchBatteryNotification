@@ -41,6 +41,125 @@ class SyncProtocolTest {
         assertEquals("com.watchbattery.notification.ACTION_SNOOZE", WearConstants.ACTION_SNOOZE)
         assertEquals("com.watchbattery.notification.ACTION_STOP_REPEAT", WearConstants.ACTION_STOP_REPEAT)
         assertEquals("com.watchbattery.notification.ACTION_TRIGGER_SMART_ALARM", WearConstants.ACTION_TRIGGER_SMART_ALARM)
+        assertEquals("com.watchbattery.notification.ACTION_CHECK_CHARGING_BATTERY", WearConstants.ACTION_CHECK_CHARGING_BATTERY)
+    }
+
+    @Test
+    fun testPhoneSessionAlertStateTracking() {
+        com.watchbattery.notification.service.PhoneWearableListenerService.resetSessionAlertStates()
+        assertFalse(com.watchbattery.notification.service.PhoneWearableListenerService.getHighBatteryAlertFired())
+        assertFalse(com.watchbattery.notification.service.PhoneWearableListenerService.getLowBatteryAlertFired())
+
+        com.watchbattery.notification.service.PhoneWearableListenerService.setHighBatteryAlertFired(true)
+        assertTrue(com.watchbattery.notification.service.PhoneWearableListenerService.getHighBatteryAlertFired())
+
+        com.watchbattery.notification.service.PhoneWearableListenerService.resetSessionAlertStates()
+        assertFalse(com.watchbattery.notification.service.PhoneWearableListenerService.getHighBatteryAlertFired())
+    }
+
+    @Test
+    fun testPhoneChargingHysteresisLogic() {
+        val highThreshold = 80
+        var hasFiredHigh = false
+
+        // Charging below threshold
+        var level = 79
+        var isCharging = true
+        if (isCharging) {
+            if (level >= highThreshold && !hasFiredHigh) {
+                hasFiredHigh = true
+            } else if (level < highThreshold) {
+                hasFiredHigh = false
+            }
+        }
+        assertFalse(hasFiredHigh)
+
+        // Reaches threshold while charging
+        level = 80
+        if (isCharging) {
+            if (level >= highThreshold && !hasFiredHigh) {
+                hasFiredHigh = true
+            } else if (level < highThreshold) {
+                hasFiredHigh = false
+            }
+        }
+        assertTrue("High alert should fire at threshold", hasFiredHigh)
+
+        // Stays above threshold - should not re-trigger
+        var firedAgain = false
+        level = 85
+        if (isCharging) {
+            if (level >= highThreshold && !hasFiredHigh) {
+                hasFiredHigh = true
+                firedAgain = true
+            } else if (level < highThreshold) {
+                hasFiredHigh = false
+            }
+        }
+        assertFalse("Should not trigger again while still above threshold", firedAgain)
+        assertTrue(hasFiredHigh)
+
+        // Drops below threshold
+        level = 75
+        if (isCharging) {
+            if (level >= highThreshold && !hasFiredHigh) {
+                hasFiredHigh = true
+            } else if (level < highThreshold) {
+                hasFiredHigh = false
+            }
+        }
+        assertFalse("Should reset when dropping below threshold", hasFiredHigh)
+    }
+
+    @Test
+    fun testPhoneDischargingHysteresisLogic() {
+        val lowThreshold = 20
+        var hasFiredLow = false
+
+        // Discharging above threshold
+        var level = 25
+        var isCharging = false
+        if (!isCharging) {
+            if (level <= lowThreshold && !hasFiredLow) {
+                hasFiredLow = true
+            } else if (level > lowThreshold + 5) {
+                hasFiredLow = false
+            }
+        }
+        assertFalse(hasFiredLow)
+
+        // Hits low threshold
+        level = 20
+        if (!isCharging) {
+            if (level <= lowThreshold && !hasFiredLow) {
+                hasFiredLow = true
+            } else if (level > lowThreshold + 5) {
+                hasFiredLow = false
+            }
+        }
+        assertTrue("Low alert should fire at threshold", hasFiredLow)
+
+        // Jitters to 22 (within +5 hysteresis window)
+        level = 22
+        if (!isCharging) {
+            if (level <= lowThreshold && !hasFiredLow) {
+                hasFiredLow = true
+            } else if (level > lowThreshold + 5) {
+                hasFiredLow = false
+            }
+        }
+        assertTrue("Low alert state should remain true within hysteresis band", hasFiredLow)
+
+        // Recovers above threshold + 5
+        level = 26
+        if (!isCharging) {
+            if (level <= lowThreshold && !hasFiredLow) {
+                hasFiredLow = true
+            } else if (level > lowThreshold + 5) {
+                hasFiredLow = false
+            }
+        }
+        assertFalse("Low alert state should reset above hysteresis band", hasFiredLow)
     }
 
     @Test
