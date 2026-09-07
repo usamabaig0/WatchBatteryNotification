@@ -3,7 +3,6 @@ package com.watchbattery.notification.wear
 import com.watchbattery.notification.core.constants.WearConstants
 import com.watchbattery.notification.core.model.BatteryStatus
 import com.watchbattery.notification.core.model.WatchSettingsSync
-import com.watchbattery.notification.wear.service.WatchChargingMonitorService
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -37,9 +36,23 @@ class WearSyncTest {
     }
 
     @Test
-    fun testChargingMonitorServiceConstants() {
-        assertEquals("watch_charging_monitor", WatchChargingMonitorService.CHANNEL_ID)
-        assertEquals(1002, WatchChargingMonitorService.NOTIFICATION_ID)
+    fun testActionPhonePollWatchChargingConstant() {
+        assertEquals(
+            "com.watchbattery.notification.ACTION_PHONE_POLL_WATCH_CHARGING",
+            WearConstants.ACTION_PHONE_POLL_WATCH_CHARGING
+        )
+    }
+
+    @Test
+    fun testBatteryPercentCalculationFromIntentExtras() {
+        val level = 85
+        val scale = 100
+        val percent = if (level >= 0 && scale > 0) ((level.toFloat() / scale.toFloat()) * 100).toInt() else -1
+        assertEquals(85, percent)
+
+        val invalidLevel = -1
+        val invalidPercent = if (invalidLevel >= 0 && scale > 0) ((invalidLevel.toFloat() / scale.toFloat()) * 100).toInt() else -1
+        assertEquals(-1, invalidPercent)
     }
 
     @Test

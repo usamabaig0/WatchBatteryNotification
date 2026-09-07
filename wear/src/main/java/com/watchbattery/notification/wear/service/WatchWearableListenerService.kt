@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.wearable.MessageEvent
@@ -32,7 +34,15 @@ class WatchWearableListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         when (messageEvent.path) {
             WearConstants.PATH_REQUEST_STATUS_UPDATE -> {
-                WatchBatteryReceiver.forceSendCurrentStatus(this)
+                val batteryIntent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: 100
+                val status = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+                val percent = if (level >= 0 && scale > 0) ((level.toFloat() / scale.toFloat()) * 100).toInt() else -1
+                if (percent >= 0) {
+                    WatchBatteryReceiver.dispatchStatus(this, percent, isCharging)
+                }
             }
 
             WearConstants.PATH_SETTINGS_SYNC_RESPONSE -> {

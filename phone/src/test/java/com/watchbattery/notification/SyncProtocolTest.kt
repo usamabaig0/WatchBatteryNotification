@@ -42,6 +42,27 @@ class SyncProtocolTest {
         assertEquals("com.watchbattery.notification.ACTION_STOP_REPEAT", WearConstants.ACTION_STOP_REPEAT)
         assertEquals("com.watchbattery.notification.ACTION_TRIGGER_SMART_ALARM", WearConstants.ACTION_TRIGGER_SMART_ALARM)
         assertEquals("com.watchbattery.notification.ACTION_CHECK_CHARGING_BATTERY", WearConstants.ACTION_CHECK_CHARGING_BATTERY)
+        assertEquals("com.watchbattery.notification.ACTION_PHONE_POLL_WATCH_CHARGING", WearConstants.ACTION_PHONE_POLL_WATCH_CHARGING)
+    }
+
+    @Test
+    fun testPhoneChargingPollerDelayCalculation() {
+        // delta > 15 -> 4 minutes (240_000 ms)
+        assertEquals(240_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(50, 80))
+        assertEquals(240_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(64, 80)) // delta = 16
+
+        // delta in 6..15 -> 2 minutes (120_000 ms)
+        assertEquals(120_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(65, 80)) // delta = 15
+        assertEquals(120_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(70, 80)) // delta = 10
+        assertEquals(120_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(74, 80)) // delta = 6
+
+        // delta in 1..5 -> 45 seconds (45_000 ms)
+        assertEquals(45_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(75, 80)) // delta = 5
+        assertEquals(45_000L, com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(79, 80)) // delta = 1
+
+        // delta <= 0 -> null (target reached, no polling needed)
+        assertNull(com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(80, 80))
+        assertNull(com.watchbattery.notification.service.PhoneChargingPoller.calculateDelay(85, 80))
     }
 
     @Test

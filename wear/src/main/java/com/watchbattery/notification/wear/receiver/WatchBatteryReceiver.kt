@@ -1,14 +1,11 @@
 package com.watchbattery.notification.wear.receiver
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
-import androidx.core.content.ContextCompat
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +18,6 @@ import com.watchbattery.notification.core.constants.WearConstants
 import com.watchbattery.notification.core.model.BatteryStatus
 import com.watchbattery.notification.wear.BuildConfig
 import com.watchbattery.notification.wear.WearBatteryApp
-import com.watchbattery.notification.wear.service.WatchChargingMonitorService
 import java.nio.ByteBuffer
 
 class WatchBatteryReceiver : BroadcastReceiver() {
@@ -36,62 +32,13 @@ class WatchBatteryReceiver : BroadcastReceiver() {
             }
             Intent.ACTION_POWER_CONNECTED -> {
                 prefs.edit().putBoolean("has_fired_full_alarm_this_session", false).apply()
-                ContextCompat.startForegroundService(context, Intent(context, WatchChargingMonitorService::class.java))
                 sendPowerEvent(context, WearConstants.PATH_WATCH_CHARGING_STARTED)
-                scheduleNextChargingCheck(context)
             }
             Intent.ACTION_POWER_DISCONNECTED -> {
                 prefs.edit().putBoolean("has_fired_full_alarm_this_session", false).apply()
-                cancelChargingCheck(context)
-                context.stopService(Intent(context, WatchChargingMonitorService::class.java))
                 sendPowerEvent(context, WearConstants.PATH_WATCH_CHARGING_STOPPED)
             }
-            WearConstants.ACTION_CHECK_CHARGING_BATTERY -> {
-                val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-                val status = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                        status == BatteryManager.BATTERY_STATUS_FULL
-
-                if (!isCharging) {
-                    cancelChargingCheck(context)
-                    return
-                }
-
-                val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
-                val percent = when {
-                    level >= 0 && scale > 0 -> ((level.toFloat() / scale.toFloat()) * 100).toInt()
-                    else -> prefs.getInt("last_battery_level", -1)
-                }
-
-                if (percent >= 0) {
-                    prefs.edit()
-                        .putInt("last_battery_level", percent)
-                        .putBoolean("last_charging_state", isCharging)
-                        .putLong("last_reading_time", System.currentTimeMillis())
-                        .apply()
-
-                    dispatchStatus(context, percent, isCharging)
-
-                    val highThreshold = prefs.getInt("high_threshold", 80)
-                    val hasFired = prefs.getBoolean("has_fired_full_alarm_this_session", false)
-                    if (percent >= highThreshold && !hasFired) {
-                        sendIntMessage(context, WearConstants.PATH_WATCH_FULLY_CHARGED, percent)
-                        prefs.edit().putBoolean("has_fired_full_alarm_this_session", true).apply()
-                    }
-                }
-
-                scheduleNextChargingCheck(context)
-            }
             Intent.ACTION_BOOT_COMPLETED -> {
-                val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-                val status = batteryIntent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                        status == BatteryManager.BATTERY_STATUS_FULL
-                if (isCharging) {
-                    ContextCompat.startForegroundService(context, Intent(context, WatchChargingMonitorService::class.java))
-                    scheduleNextChargingCheck(context)
-                }
                 queryAndSendCurrentStatus(context)
             }
         }
@@ -157,51 +104,8 @@ class WatchBatteryReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val CHARGING_CHECK_REQUEST_CODE = 2002
         private val scope = CoroutineScope(Dispatchers.IO)
         private val json = Json { ignoreUnknownKeys = true }
-
-        fun scheduleNextChargingCheck(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-            val intent = Intent(context, WatchBatteryReceiver::class.java).apply {
-                action = WearConstants.ACTION_CHECK_CHARGING_BATTERY
-            }
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                CHARGING_CHECK_REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val triggerAtMillis = System.currentTimeMillis() + 30000L
-            val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                alarmManager.canScheduleExactAlarms()
-            } else {
-                true
-            }
-            try {
-                if (canExact) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                } else {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                }
-            } catch (e: SecurityException) {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-            }
-        }
-
-        fun cancelChargingCheck(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-            val intent = Intent(context, WatchBatteryReceiver::class.java).apply {
-                action = WearConstants.ACTION_CHECK_CHARGING_BATTERY
-            }
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                CHARGING_CHECK_REQUEST_CODE,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
-        }
 
         fun sendIntMessage(context: Context, path: String, value: Int) {
             scope.launch {

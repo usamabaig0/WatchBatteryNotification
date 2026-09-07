@@ -49,14 +49,17 @@ class PhoneWearableListenerService : WearableListenerService() {
 
             WearConstants.PATH_WATCH_CHARGING_STARTED -> {
                 val level = extractInt(data)
+                val settings = WatchBatteryApp.instance.repository.settingsFlow.value
                 hasFiredHighBatteryAlertForSession = false
                 hasFiredLowBatteryAlertForSession = false
                 triggerAlert(WearConstants.EVENT_CHARGING_STARTED, level)
+                PhoneChargingPoller.scheduleNextPoll(applicationContext, level, settings.highBatteryThreshold)
             }
 
             WearConstants.PATH_WATCH_CHARGING_STOPPED -> {
                 val level = extractInt(data)
                 hasFiredHighBatteryAlertForSession = false
+                PhoneChargingPoller.cancelPoll(applicationContext)
                 triggerAlert(WearConstants.EVENT_CHARGING_STOPPED, level)
                 ChargingNotificationManager.dismissChargingNotification(applicationContext)
             }
@@ -64,6 +67,7 @@ class PhoneWearableListenerService : WearableListenerService() {
             WearConstants.PATH_WATCH_FULLY_CHARGED -> {
                 val level = extractInt(data)
                 hasFiredHighBatteryAlertForSession = true
+                PhoneChargingPoller.cancelPoll(applicationContext)
                 triggerAlert(WearConstants.EVENT_FULLY_CHARGED, level)
             }
 
@@ -207,12 +211,15 @@ class PhoneWearableListenerService : WearableListenerService() {
             if (status.is_charging) {
                 if (status.battery_level >= prevSettings.highBatteryThreshold && !hasFiredHighBatteryAlertForSession) {
                     hasFiredHighBatteryAlertForSession = true
+                    PhoneChargingPoller.cancelPoll(applicationContext)
                     triggerAlert(WearConstants.EVENT_FULLY_CHARGED, status.battery_level)
                 } else if (status.battery_level < prevSettings.highBatteryThreshold) {
                     hasFiredHighBatteryAlertForSession = false
+                    PhoneChargingPoller.scheduleNextPoll(applicationContext, status.battery_level, prevSettings.highBatteryThreshold)
                 }
             } else {
                 hasFiredHighBatteryAlertForSession = false
+                PhoneChargingPoller.cancelPoll(applicationContext)
                 if (status.battery_level <= prevSettings.lowBatteryThreshold && !hasFiredLowBatteryAlertForSession) {
                     hasFiredLowBatteryAlertForSession = true
                     triggerAlert(WearConstants.EVENT_LOW_BATTERY, status.battery_level)

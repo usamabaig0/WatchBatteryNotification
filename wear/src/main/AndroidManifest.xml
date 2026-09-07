@@ -60,11 +60,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".service.WatchChargingMonitorService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
         <receiver
             android:name=".receiver.WatchBatteryReceiver"
             android:exported="true">
@@ -73,7 +68,6 @@
                 <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="com.watchbattery.notification.ACTION_CHECK_CHARGING_BATTERY" />
             </intent-filter>
         </receiver>
 

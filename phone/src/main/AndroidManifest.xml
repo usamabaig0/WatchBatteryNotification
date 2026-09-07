@@ -99,6 +99,14 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".receiver.ChargingPollReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.watchbattery.notification.ACTION_PHONE_POLL_WATCH_CHARGING" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
