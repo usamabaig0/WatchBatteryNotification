@@ -17,3 +17,5 @@ slug: 20260908-release-and-readme
    - Clean, non-intimidating wireless ADB and Bugjaeger installation guides.
    - Strict adherence to \`humanizer\` rules: zero em/en dashes, zero AI buzzwords, sentence-case headings, straight quotes.
 5. Added Apache 2.0 LICENSE.
+
+6. Added specific explanation on lack of native 80% charge limits and notifications on Wear OS watches.
