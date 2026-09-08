@@ -151,7 +151,7 @@ fun TroubleshootingFaqScreen(watchModel: String, accentColor: Color) {
             Button(
                 onClick = {
                     val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:watchbatterymonitor@gmail.com")
+                        data = Uri.parse("mailto:watchbatterynotification@gmail.com")
                         putExtra(Intent.EXTRA_SUBJECT, "Watch Battery Notification Feedback ($watchModel)")
                     }
                     runCatching { context.startActivity(emailIntent) }.onFailure {
