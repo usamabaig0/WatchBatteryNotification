@@ -51,33 +51,13 @@ class QuickAlarmActivity : ComponentActivity() {
     }
 
     private fun scheduleReminder(minutes: Int, watchModel: String) {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val triggerAt = System.currentTimeMillis() + minutes * 60 * 1000L
-
-        val intent = Intent(this, SmartAlarmReceiver::class.java).apply {
-            action = WearConstants.ACTION_TRIGGER_SMART_ALARM
-            putExtra(WearConstants.EXTRA_EVENT_TYPE, WearConstants.EVENT_LOW_BATTERY)
-            putExtra(WearConstants.EXTRA_BATTERY_LEVEL, 15)
-            putExtra(WearConstants.EXTRA_WATCH_MODEL, watchModel.ifBlank { "Smartwatch" })
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            this, 301, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        SmartAlarmReceiver.scheduleNext(
+            context = this,
+            eventType = WearConstants.EVENT_LOW_BATTERY,
+            batteryLevel = 15,
+            watchModel = watchModel.ifBlank { "Smartwatch" },
+            intervalSeconds = minutes * 60
         )
-
-        val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            alarmManager.canScheduleExactAlarms()
-        } else {
-            true
-        }
-        try {
-            if (canExact) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-            } else {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-            }
-        } catch (e: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-        }
 
         Toast.makeText(this, "Reminder scheduled in $minutes minutes", Toast.LENGTH_SHORT).show()
     }

@@ -60,6 +60,7 @@ class PhoneWearableListenerService : WearableListenerService() {
                 val level = extractInt(data)
                 hasFiredHighBatteryAlertForSession = false
                 PhoneChargingPoller.cancelPoll(applicationContext)
+                com.watchbattery.notification.receiver.SmartAlarmReceiver.cancel(applicationContext)
                 triggerAlert(WearConstants.EVENT_CHARGING_STOPPED, level)
                 ChargingNotificationManager.dismissChargingNotification(applicationContext)
             }
@@ -330,6 +331,32 @@ class PhoneWearableListenerService : WearableListenerService() {
             }
             ContextCompat.startForegroundService(this, playerIntent)
         }.onFailure { it.printStackTrace() }
+
+        // 4. Schedule repeating alarm if configured
+        val settings = WatchBatteryApp.instance.repository.settingsFlow.value
+        val repeatConfig = if (eventType == WearConstants.EVENT_LOW_BATTERY) {
+            settings.lowBatteryRepeatConfig
+        } else if (eventType == WearConstants.EVENT_FULLY_CHARGED) {
+            settings.highBatteryRepeatConfig
+        } else {
+            com.watchbattery.notification.core.model.RepeatConfig.DO_NOT_REPEAT
+        }
+
+        val repeatIntervalSeconds = if (eventType == WearConstants.EVENT_LOW_BATTERY) {
+            settings.lowBatteryRepeatIntervalSeconds
+        } else {
+            settings.highBatteryRepeatIntervalSeconds
+        }
+
+        if (repeatConfig != com.watchbattery.notification.core.model.RepeatConfig.DO_NOT_REPEAT && repeatIntervalSeconds > 0) {
+            com.watchbattery.notification.receiver.SmartAlarmReceiver.scheduleNext(
+                context = applicationContext,
+                eventType = eventType,
+                batteryLevel = level,
+                watchModel = watchModel,
+                intervalSeconds = repeatIntervalSeconds
+            )
+        }
     }
 
     private fun respondToSettingsSync(nodeId: String) {

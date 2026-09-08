@@ -32,47 +32,22 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 val batteryLevel = intent.getIntExtra(WearConstants.EXTRA_BATTERY_LEVEL, 15)
                 val watchModel = intent.getStringExtra(WearConstants.EXTRA_WATCH_MODEL) ?: "Smartwatch"
 
-                // Schedule snooze alarm in 5 minutes
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                val triggerAtMillis = System.currentTimeMillis() + 5 * 60 * 1000L
-
-                val alarmIntent = Intent(context, SmartAlarmReceiver::class.java).apply {
-                    action = WearConstants.ACTION_TRIGGER_SMART_ALARM
-                    putExtra(WearConstants.EXTRA_EVENT_TYPE, eventType)
-                    putExtra(WearConstants.EXTRA_BATTERY_LEVEL, batteryLevel)
-                    putExtra(WearConstants.EXTRA_WATCH_MODEL, watchModel)
-                }
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context, 201, alarmIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                // Stop current audio and schedule snooze alarm in 5 minutes (300 seconds)
+                context.stopService(Intent(context, com.watchbattery.notification.service.NotificationPlayerService::class.java))
+                SmartAlarmReceiver.scheduleNext(
+                    context = context,
+                    eventType = eventType,
+                    batteryLevel = batteryLevel,
+                    watchModel = watchModel,
+                    intervalSeconds = 300
                 )
-
-                val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    alarmManager.canScheduleExactAlarms()
-                } else {
-                    true
-                }
-                try {
-                    if (canExact) {
-                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                    } else {
-                        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                    }
-                } catch (e: SecurityException) {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-                }
             }
 
             WearConstants.ACTION_STOP_REPEAT -> {
-                // Completely stop repeating alarm for this cycle
+                // Completely stop repeating alarm and active playback for this cycle
                 notificationManager.cancel(1001)
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                val alarmIntent = Intent(context, SmartAlarmReceiver::class.java).apply {
-                    action = WearConstants.ACTION_TRIGGER_SMART_ALARM
-                }
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context, 201, alarmIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
-                alarmManager.cancel(pendingIntent)
+                context.stopService(Intent(context, com.watchbattery.notification.service.NotificationPlayerService::class.java))
+                com.watchbattery.notification.receiver.SmartAlarmReceiver.cancel(context)
             }
 
             WearConstants.ACTION_DISMISS_CHARGING_BAR -> {
