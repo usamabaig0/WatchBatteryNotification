@@ -19,10 +19,12 @@ Download the latest version directly from the [Releases page](https://github.com
 
 ## What problems this app solves
 
-Most smartwatches do not notify your phone when they finish charging. That leads to a few common frustrations that this app fixes:
+Unlike phones, smartwatches lack built-in charge limit settings and do not send battery notifications to your phone. That leads to a few common frustrations that this app fixes:
 
-### 1. Forgetting your watch on the charger
-Leaving a smartwatch on its charging dock for hours after reaching 100% keeps the battery warm and wears it down faster over time. If you prefer to stop charging at 80% or 85% to protect long-term battery health, you usually have to get up and check the watch face manually. This app rings your phone the moment your watch reaches your chosen percentage, so you can unplug it right away.
+### 1. No built-in 80% charge limit on smartwatches
+Many smartphones now have a battery protection setting that stops charging automatically at 80% to prolong battery life. Smartwatch manufacturers do not include this feature on watches. They also do not notify your phone when your watch reaches 80% or finishes charging. Instead, your watch charges all the way to 100% and sits on the hot charging dock.
+
+If you want to protect your watch battery by sticking to the 20% to 80% charging rule, you are forced to check the watch face repeatedly. This app solves that problem by ringing your phone the moment your watch crosses 80% (or any percentage you choose) so you can take it off the charger on time.
 
 ### 2. The watch slipping off the magnetic dock
 Smartwatch charging pucks are small and light. A slight bump to your nightstand, a pet walking by, or cable tension can break the magnetic contact. When that happens, charging stops without any sound. You only discover it hours later when you pick up a dead watch. The app detects unexpected charging stops and sounds an alert immediately so you can put the watch back on the charger.
