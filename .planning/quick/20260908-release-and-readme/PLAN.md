@@ -8,7 +8,7 @@ description: GitHub release creation, SEO optimization, and humanized README rew
 # Plan: GitHub Release, SEO, and Humanized README
 
 ## Goals
-1. Publish GitHub Release v2.5.6 on ononymuos/WatchBatteryNotification with release notes and binary APK attachments.
+1. Publish GitHub Release v2.5.6 on usamabaig0/WatchBatteryNotification with release notes and binary APK attachments.
 2. Optimize GitHub repository metadata (topics, description, homepage) for high-intent Wear OS and smartwatch discovery.
 3. Rewrite README.md in plain, humanized English explaining what problems the app solves, supported devices, and straightforward installation steps.
 4. Verify text against humanizer guidelines (no em/en dashes, no AI buzzwords, sentence-case headings, no robotic padding).

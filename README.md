@@ -8,12 +8,12 @@ The app works with Wear OS smartwatches (Samsung Galaxy Watch, Google Pixel Watc
 
 ## Downloads
 
-Download the latest version directly from the [Releases page](https://github.com/ononymuos/WatchBatteryNotification/releases/tag/v2.5.6):
+Download the latest version directly from the [Releases page](https://github.com/usamabaig0/WatchBatteryNotification/releases/tag/v2.5.6):
 
 | Device | Package | Download Link | Requirements |
 |---|---|---|---|
-| Android Phone | Phone App | [Download Phone APK](https://github.com/ononymuos/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-Phone.apk) | Android 8.0 or newer (tested through Android 16) |
-| Wear OS Smartwatch | Watch Companion | [Download Wear OS APK](https://github.com/ononymuos/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-WearOS.apk) | Wear OS 3, 4, 5, or 6 |
+| Android Phone | Phone App | [Download Phone APK](https://github.com/usamabaig0/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-Phone.apk) | Android 8.0 or newer (tested through Android 16) |
+| Wear OS Smartwatch | Watch Companion | [Download Wear OS APK](https://github.com/usamabaig0/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-WearOS.apk) | Wear OS 3, 4, 5, or 6 |
 
 ---
 
@@ -64,7 +64,7 @@ The phone app works on any smartphone running Android 8.0 up to Android 16.
 Installing the app requires putting the phone app on your phone and the watch app on your watch.
 
 ### Step 1: Install the phone app
-1. On your Android phone, download [WatchBatteryNotification-Phone.apk](https://github.com/ononymuos/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-Phone.apk).
+1. On your Android phone, download [WatchBatteryNotification-Phone.apk](https://github.com/usamabaig0/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-Phone.apk).
 2. Tap the downloaded file to install it. If prompted, allow your browser or file manager to install apps from this source.
 3. Open the app and grant notification and alarm permissions when asked.
 
@@ -76,7 +76,7 @@ Because the watch app is distributed as an APK file, you install it on your smar
 2. In **Settings > Developer options**, turn on **Wireless debugging** and connect to your home Wi-Fi network.
 3. Install a free tool like **Bugjaeger Mobile ADB** or **Geminiman Wear OS Manager** from the Google Play Store on your phone.
 4. Pair your phone to your watch using the IP address and pairing code shown on your watch screen.
-5. In the tool, select [WatchBatteryNotification-WearOS.apk](https://github.com/ononymuos/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-WearOS.apk) and click install.
+5. In the tool, select [WatchBatteryNotification-WearOS.apk](https://github.com/usamabaig0/WatchBatteryNotification/releases/download/v2.5.6/WatchBatteryNotification-WearOS.apk) and click install.
 
 #### Option B: Using a computer with ADB
 If you have the Android platform tools installed on your PC or Mac:
@@ -134,7 +134,7 @@ The project is built with Kotlin and Jetpack Compose across three modules:
 ### Building from source
 Clone the repository and run:
 ```bash
-git clone https://github.com/ononymuos/WatchBatteryNotification.git
+git clone https://github.com/usamabaig0/WatchBatteryNotification.git
 cd WatchBatteryNotification
 ./gradlew assembleRelease
 ```

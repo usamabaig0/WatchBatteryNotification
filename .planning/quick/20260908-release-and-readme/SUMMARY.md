@@ -7,7 +7,7 @@ slug: 20260908-release-and-readme
 # Summary: GitHub Release, SEO, and Humanized README
 
 ## Accomplished
-1. Created and published GitHub Release \`v2.5.6\` on \`ononymuos/WatchBatteryNotification\`.
+1. Created and published GitHub Release \`v2.5.6\` on \`usamabaig0/WatchBatteryNotification\`.
 2. Attached compiled production binaries to the release:
    - \`WatchBatteryNotification-Phone.apk\` (19.99 MB)
    - \`WatchBatteryNotification-WearOS.apk\` (29.13 MB)
